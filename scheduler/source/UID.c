@@ -14,6 +14,11 @@
 
 #include "utils.h"		/* boolean_ty	*/
 #include "UID.h"
+
+/***************************** Static Definitions *****************************/
+
+size_t shared_counter = 0;	/* a shared counter for all new created uid's	*/
+
 /******************************************************************************/
 /************************* Functions__Implementations *************************/
 /******************************************************************************/
@@ -27,9 +32,11 @@ ilrd_uid_ty UIDCreate(void)
 		return (UIDGetBadUID());
 	}
 	
+	++shared_counter;
+	
 	new_uid.PID = getpid();
-	new_uid.timestamp = curr_time; 
-	++(new_uid.counter); 
+	new_uid.timestamp = curr_time;
+	new_uid.counter = shared_counter;
 	
 	return(new_uid);
 }
