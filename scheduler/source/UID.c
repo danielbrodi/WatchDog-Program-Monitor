@@ -9,14 +9,14 @@
 
 /********************************* Inclusions *********************************/
 #include <stddef.h>		/* size_t		*/
-#include <sys/types.h>	/* pid_t		*/
+#include <unistd.h>		/* pid_t		*/
 #include <time.h>		/* time_t		*/
 
 #include "utils.h"		/* boolean_ty	*/
 #include "UID.h"
 
 /***************************** Static Definitions *****************************/
-
+ilrd_uid_ty UIDGetBadUID(void);
 size_t shared_counter = 0;	/* a shared counter for all new created uid's	*/
 
 /******************************************************************************/
@@ -24,9 +24,9 @@ size_t shared_counter = 0;	/* a shared counter for all new created uid's	*/
 /******************************************************************************/
 ilrd_uid_ty UIDCreate(void)
 {
-	struct ilrd_uid_ty new_uid;
-	
+	ilrd_uid_ty new_uid;
 	time_t curr_time = time(0);
+	
 	if (-1 == curr_time)
 	{
 		return (UIDGetBadUID());
@@ -54,7 +54,7 @@ boolean_ty UIDIsEqual(ilrd_uid_ty uid1, ilrd_uid_ty uid2)
 /******************************************************************************/
 ilrd_uid_ty UIDGetBadUID(void)
 {
-	struct ilrd_uid_ty bad_uid;
+	ilrd_uid_ty bad_uid;
 	
 	bad_uid.PID = 0;
 	bad_uid.timestamp = 0; 
@@ -62,4 +62,4 @@ ilrd_uid_ty UIDGetBadUID(void)
 	
 	return (bad_uid);
 }
-/*******************************************************************************
+/******************************************************************************/
