@@ -36,7 +36,8 @@ void SchedulerDestroy(scheduler_ty *scheduler);
 /* Return value: The inserted new UID                           */
 /* 				 On failure - Bad UID {0,0,0}                   */
 /* Complexity: O(n)                                             */
-ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,  operation_func_ty operation_func,  size_t interval, void *param);
+ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
+			operation_func_ty operation_func,  size_t interval, void *param);
 
 /* Removes the task with the UID from the scheduler */
 /* Returns SUCCESS or FAILURE                       */

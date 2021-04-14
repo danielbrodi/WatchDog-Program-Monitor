@@ -18,7 +18,8 @@ typedef struct task task_ty;
 /* Creates an empty task and returns pointer to it */
 /* Returns NULL on failure */
 /* Complexity: O(1) */
-task_ty *TaskCreate(operation_func_ty func, size_t interval, time_t time_to_run, void *param);
+task_ty *TaskCreate(operation_func_ty func, size_t interval, time_t time_to_run,
+																void *param);
 
 /* Frees task                                         */
 /* No operations will be performed if pointer is NULL */
