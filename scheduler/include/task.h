@@ -44,6 +44,6 @@ ilrd_uid_ty TaskGetUid(const task_ty *task);
 
 /* Sets time_to_run of task */
 /* Complexity: O(1) */
-void TaskSetTimeToRun(task_ty *task, const time_t new_time);
+void TaskSetTimeToRun(task_ty *task, time_t new_time);
 
 #endif /* __TASK_H__ */
