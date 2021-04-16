@@ -142,6 +142,8 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 
 		switch(ret_status)
 		{
+			/* in case the task is not done yet, return it to the scheduler
+				with a new time to excute it	*/
 			case NOT_DONE:
 				TaskSetTimeToRun(task_to_run, CURRENT_TIME);
 				if (SUCCESS == PqueueEnqueue(scheduler->tasks, task_to_run))
@@ -152,11 +154,13 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 				{
 					return (SCH_FAILURE);
 				}
-
+			/* in case the task is done, keep it removed and clear the memory
+				it takes and continue the run of the scheduler	*/
 			case DONE:
 				TaskDestroy(task_to_run);
 				break;
-
+			/* in case the excuted operation by the task has been failed,
+				remove it from the memory and return a failure message	*/
 			case OPER_FAILURE:
 				TaskDestroy(task_to_run);
 				return (FUNC_FAILURE);
