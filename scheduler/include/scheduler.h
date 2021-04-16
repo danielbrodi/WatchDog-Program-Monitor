@@ -34,7 +34,6 @@ scheduler_ty *SchedulerCreate(void);
 void SchedulerDestroy(scheduler_ty *scheduler);
 
 /* Add task to the scheduler                                    */
-/* Function returns enum:                                       */
 /* Return value: The inserted new UID                           */
 /* 				 On failure - Bad UID {0,0,0}                   */
 /* Complexity: O(n)                                             */
