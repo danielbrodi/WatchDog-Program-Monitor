@@ -12,9 +12,14 @@
 #include <stddef.h>				/*	size_t, NULL	*/
 #include <stdlib.h>				/*	malloc, free	*/
 
-#include "UID.h"				/*	UIDCreate, UIDIsEqual, UIDGetBadUID		*/
+
+#include "pqueue.h"				/*	priority queue API wrapper				*/
+#include "UID.h"				/*	UIDIsEqual, UIDGetBadUID				*/
 #include "utils.h"				/*	status_ty, boolean_ty					*/
+#include "task.h"				/*	scheduler's tasks implementation		*/
 #include "operation_func.h"		/*	operation_func_ty definition			*/
+#include <unistd.h>				/*	sleep									*/
+#include "scheduler.h"
 
 /***************************** Macros Definitions *****************************/
 #define VOID_PTR_TO_TASK_PTR(void_ptr) ((task_ty *)void_ptr)
@@ -23,7 +28,7 @@
 
 /**************************** Forward Declarations ****************************/
 int SortTasks(const void *task1, const void *task2);
-bolean_ty MatchUIDs(const void *task, const void *uid2);
+boolean_ty MatchUIDs(const void *task, const void *uid);
 
 /***************************** Struct__Definition *****************************/
 struct scheduler
@@ -40,16 +45,16 @@ struct scheduler
 /******************************************************************************/
 scheduler_ty *SchedulerCreate(void)
 {
-	scheduler_ty new_scheduler = (scheduler_ty *)malloc(sizeof(scheduler_ty));
+	scheduler_ty *new_scheduler = (scheduler_ty *)malloc(sizeof(scheduler_ty));
 	if (NULL == new_scheduler)
 	{
 		return (NULL);
 	}
 	
 	new_scheduler->tasks = PqueueCreate(SortTasks);
-	if (NULL == scheduler->tasks)
+	if (NULL == new_scheduler->tasks)
 	{
-		free(new_scheduler)
+		free(new_scheduler);
 		new_scheduler = NULL;
 		
 		return (NULL);
@@ -69,8 +74,8 @@ void SchedulerDestroy(scheduler_ty *scheduler)
 			SchedulerClear(scheduler);
 		}
 			
-		PqueueDestroy(scheduler->pqueue);
-		scheduler->pqueue = NULL;
+		PqueueDestroy(scheduler->tasks);
+		scheduler->tasks = NULL;
 				
 		free(scheduler);
 		scheduler = NULL;
@@ -80,7 +85,7 @@ void SchedulerDestroy(scheduler_ty *scheduler)
 ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
 			operation_func_ty operation_func,  size_t interval, void *param)
 {
-	task_ty new_task = NULL;
+	task_ty *new_task = NULL;
 	
 	assert(scheduler);
 	assert(operation_func);
@@ -90,7 +95,7 @@ ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
 	/*	if the task was successfully created and added to the scheduler		*/
 	if (new_task && (SUCCESS == PqueueEnqueue(scheduler->tasks, new_task)))
 	{
-		return (TaskGetUid(new_task))
+		return (TaskGetUid(new_task));
 	}
 	else
 	{
@@ -103,9 +108,9 @@ status_ty SchedulerRemove(scheduler_ty *scheduler, ilrd_uid_ty uid)
 	ilrd_uid_ty uid_to_remove = uid;
 	
 	assert(scheduler);
-	assert(!SchedulerIsEmpty);
+	assert(!SchedulerIsEmpty(scheduler));
 	
-	if (!UIDIsEqual(UIDGetBadUID, uid))	/* is the received UID valid?	*/ 
+	if (!UIDIsEqual(UIDGetBadUID(), uid))	/* is the received UID valid?	*/ 
 	{
 		void *task_to_remove = PqueueErase(scheduler->tasks,
 													MatchUIDs, &uid_to_remove);
@@ -122,7 +127,7 @@ status_ty SchedulerRemove(scheduler_ty *scheduler, ilrd_uid_ty uid)
 /******************************************************************************/
 run_status_ty SchedulerRun(scheduler_ty *scheduler)
 {
-	task_ty *task_to_run;
+	task_ty *task_to_run = NULL;
 	oper_ret_ty ret_status = 0;
 
 	assert(scheduler);
@@ -200,7 +205,7 @@ void SchedulerClear(scheduler_ty *scheduler)
 {
 	assert(scheduler);
 	
-	while (!SchedulerIsEmpty)
+	while (!SchedulerIsEmpty(scheduler))
 	{
 		TaskDestroy(PqueuePeek(scheduler->tasks));
 		PqueueDequeue(scheduler->tasks);
@@ -219,7 +224,7 @@ int SortTasks(const void *task1, const void *task2)
 /******************************************************************************/
 /* first paramater is each element's data in the scheduler which means a task.
 	second paramater is an address of a valid uid	*/
-bolean_ty MatchUIDs(const void *task, const void *uid)
+boolean_ty MatchUIDs(const void *task, const void *uid)
 {
 	ilrd_uid_ty uid_of_task = TaskGetUid(task);
 	ilrd_uid_ty uid_to_find = *(ilrd_uid_ty *)uid;

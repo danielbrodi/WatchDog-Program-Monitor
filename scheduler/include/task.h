@@ -24,7 +24,7 @@ task_ty *TaskCreate(operation_func_ty func, size_t interval,
 /* Frees task                                         */
 /* No operations will be performed if pointer is NULL */
 /* Complexity: O(1)                                   */
-void TaskDestroy(task_ty *task)
+void TaskDestroy(task_ty *task);
 
 /* Runs the task's operation function 	*/
 /* Function returns enum:				*/

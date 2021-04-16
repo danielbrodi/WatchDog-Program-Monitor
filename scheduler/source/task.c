@@ -15,6 +15,7 @@
 #include "UID.h"				/*	UIDCreate, UIDIsEqual, UIDGetBadUID		*/
 #include "utils.h"				/*	status_ty, boolean_ty					*/
 #include "operation_func.h"		/*	operation_func_ty definition			*/
+#include "task.h"
 
 /***************************** Struct__Definition *****************************/
 struct task
@@ -31,26 +32,28 @@ struct task
 task_ty *TaskCreate(operation_func_ty func, size_t interval,
 					 						time_t time_to_run, void *param)
 {
+	task_ty *new_task = NULL;
+	
 	assert(func); /* a task without a valid function to excute is meaningless */
 	
-	task_ty *new_task = (task_ty *)malloc(task_ty);
+	new_task = (task_ty *)malloc(sizeof(task_ty));
 	if (NULL == new_task)
 	{
 		return (NULL);
 	}
 	
-	task->uid = UIDCreate();
-	if (UIDIsEqual(task->uid, UIDGetBadUID))
+	new_task->uid = UIDCreate();
+	if (UIDIsEqual(new_task->uid, UIDGetBadUID()))
 	{
 		free(new_task);
-		new_task == NULL;
+		new_task = NULL;
 		
 		return (NULL);
 	}
 	
-	task->interval = interval;
-	task->time_to_run = time_to_run;
-	task->param = param;
+	new_task->interval = interval;
+	new_task->time_to_run = time_to_run;
+	new_task->param = param;
 	
 	return (new_task);	
 	
