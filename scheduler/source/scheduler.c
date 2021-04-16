@@ -20,7 +20,11 @@
 #define VOID_PTR_TO_TASK_PTR(void_ptr) ((task_ty *)void_ptr)
 #define TIME_TO_INT(time) (int)(long)(time)
 #define CURRENT_TIME time(0)
+
 /**************************** Forward Declarations ****************************/
+int SortTasks(const void *task1, const void *task2);
+bolean_ty MatchUIDs(const void *task, const void *uid2);
+
 /***************************** Struct__Definition *****************************/
 struct scheduler
 {
@@ -96,15 +100,17 @@ ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
 /******************************************************************************/
 status_ty SchedulerRemove(scheduler_ty *scheduler, ilrd_uid_ty uid)
 {
+	ilrd_uid_ty uid_to_remove = uid;
+	
 	assert(scheduler);
+	assert(!SchedulerIsEmpty);
 	
 	if (!UIDIsEqual(UIDGetBadUID, uid))	/* is the received UID valid?	*/ 
 	{
-		ilrd_uid_ty uid_to_remove = uid;
 		void *task_to_remove = PqueueErase(scheduler->tasks,
 													MatchUIDs, &uid_to_remove);
 
-		if(NULL != task_to_remove)
+		if(NULL != task_to_remove) /* task has been found in the scheduler	*/
 		{		
 			TaskDestroy(task_to_remove);
 			return (SUCCESS);	/* the task was successfully removed	*/
@@ -177,17 +183,21 @@ void SchedulerClear(scheduler_ty *scheduler)
 
 }
 /******************************************************************************/
-/*	Returns a positive value if data2 has an
-	earlier expected time to run than data1	*/
-int SortTasks(const void *data1, const void *data2)
+/*	Returns a positive value if task2 has an
+	earlier expected time to run than task1	*/
+int SortTasks(const void *task1, const void *task2)
 {
-	return	(TIME_TO_INT(VOID_PTR_TO_TASK_PTR(data1)->time_to_run -
-									VOID_PTR_TO_TASK_PTR(data2)->time_to_run));
+	return	(TIME_TO_INT(VOID_PTR_TO_TASK_PTR(task1)->time_to_run -
+									VOID_PTR_TO_TASK_PTR(task2)->time_to_run));
 }
 /******************************************************************************/
-/* receive UIDs addresses and cast them to uids to be able to use UIDIsEqual */
-bolean_ty MatchUIDs(const void *data1, const void *data2)
+/* first paramater is each element's data in the scheduler which means a task.
+	second paramater is an address of a valid uid	*/
+bolean_ty MatchUIDs(const void *task, const void *uid)
 {
-	return UIDIsEqual(((ilrd_uid_ty *)*data1), ((ilrd_uid_ty *)*data2));
+	ilrd_uid_ty uid_of_task = TaskGetUid(task);
+	ilrd_uid_ty uid_to_find = *(ilrd_uid_ty *)uid;
+	
+	return (UIDIsEqual(uid_of_task, uid_to_find));
 }
 /******************************************************************************/
