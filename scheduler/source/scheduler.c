@@ -1,9 +1,9 @@
 /*********************************FILE__HEADER*********************************\
-* File:	pqueue.c						 		  								
-* Author:	Daniel Brodsky					  								
-* Date:	16/04/2021							   								
-* Version:	1.0	(Pre-Review)						
-* Reviewer:	Olga						   								
+* File:			scheduler.c						 		  								
+* Author:		Daniel Brodsky					  								
+* Date:			16/04/2021							   								
+* Version:		1.0	(Pre-Review)						
+* Reviewer:		Olga						   								
 * Description:	Implementation of a task scheduler.		 
 \******************************************************************************/
 
