@@ -30,11 +30,11 @@
 /**************************** Forward Declarations ****************************/
 static void SchedulerCreateTest(scheduler_ty *scheduler);
 static void SchedulerDestroyTest(scheduler_ty *scheduler);
-/*static void SchedulerAddTest(scheduler_ty *scheduler);*/
+static void SchedulerAddTest(scheduler_ty *scheduler);
 /*static void SchedulerRemoveTest(scheduler_ty *scheduler);*/
 /*static void SchedulerRunTest(scheduler_ty *scheduler);*/
 /*static void SchedulerIsEmptyTest(scheduler_ty *scheduler);*/
-/*static void SchedulerSizeTest(scheduler_ty *scheduler);*/
+static void SchedulerSizeTest(scheduler_ty *scheduler);
 /*static void SchedulerClearTest(scheduler_ty *scheduler);*/
 
 /******************************* Main__Function *******************************/
@@ -47,6 +47,8 @@ int main()
 	srand(time(0));
 	
 	SchedulerCreateTest(new_scheduler);
+	SchedulerAddTest(new_scheduler);
+	SchedulerSizeTest(new_scheduler);
 /*	PqueueSortingTest(new_scheduler);*/
 /*	PqueueClearTest(new_scheduler);*/
 /*	PqueueEraseTest(new_scheduler);*/
@@ -62,10 +64,29 @@ static void SchedulerCreateTest(scheduler_ty *scheduler)
 	printf("\nTask Scheduler Creation Test: ");
 	NULL == scheduler ? PRINT_FAILURE : PRINT_SUCCESS;
 }
-
+/******************************************************************************/
 static void SchedulerDestroyTest(scheduler_ty *scheduler)
 {
 	SchedulerDestroy(scheduler);
 	printf (ANSI_COLOR_CYAN "\nThe scheduler has been successfully deleted\n\n" 
 															ANSI_COLOR_RESET);
 }
+/******************************************************************************/
+static void SchedulerAddTest(scheduler_ty *scheduler)
+{
+	boolean_ty is_working = TRUE;
+	int x = 3;
+	
+	SchedulerAdd(scheduler, 3, (void *)x)
+	
+	is_working ? PRINT_SUCCESS : PRINT_FAILURE;
+}
+/******************************************************************************/
+static void SchedulerSizeTest(scheduler_ty *scheduler);
+/******************************************************************************/
+oper_ret_ty PrintHello(void *param)
+{
+	printf("Hello");
+	return (done);
+}
+/******************************************************************************/
