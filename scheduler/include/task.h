@@ -18,20 +18,20 @@ typedef struct task task_ty;
 /* Creates an empty task and returns pointer to it */
 /* Returns NULL on failure */
 /* Complexity: O(1) */
-task_ty *TaskCreate(operation_func_ty func, size_t interval, time_t time_to_run,
-																void *param);
+task_ty *TaskCreate(operation_func_ty func, size_t interval,
+					 						time_t time_to_run, void *param);
 
 /* Frees task                                         */
 /* No operations will be performed if pointer is NULL */
 /* Complexity: O(1)                                   */
 void TaskDestroy(task_ty *task)
 
-/* Runs the task's operation function */
-/* Function returns enum:             */
-/* -1 FAILURE                         */
-/*  0 DONE                            */
-/*  1 NOT DONE                        */
-/* Complexity: O(1)                   */
+/* Runs the task's operation function 	*/
+/* Function returns enum:				*/
+/* -1 OPER_FAILURE						*/
+/*  0 DONE               				*/
+/*  1 NOT DONE           				*/
+/* Complexity: O(1)                   	*/
 oper_ret_ty TaskRun(task_ty *task);
 
 /* Returns time to run from task */

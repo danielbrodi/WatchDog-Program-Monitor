@@ -157,7 +157,7 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 				TaskDestroy(task_to_run);
 				break;
 
-			case FAILURE:
+			case OPER_FAILURE:
 				TaskDestroy(task_to_run);
 				return (FUNC_FAILURE);
 		}	

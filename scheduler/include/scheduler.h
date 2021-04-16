@@ -1,7 +1,7 @@
 /************************************************
 * File: scheduler.h							 	*
 * Date: 13/04/2021							    *
-* Version: 1.1 								    *
+* Version: 1.4 								    *
 * Description:  Scheduler API     		        * 
 ************************************************/
 #ifndef	__SCHEDULER_H__
@@ -17,7 +17,8 @@ typedef enum
 {
     FINISHED,
 	STOPPED,
-    FAILURE
+    SCH_FAILURE,
+    FUNC_FAILURE
 } run_status_ty;
 
 typedef struct scheduler scheduler_ty;
@@ -33,10 +34,11 @@ scheduler_ty *SchedulerCreate(void);
 void SchedulerDestroy(scheduler_ty *scheduler);
 
 /* Add task to the scheduler                                    */
+/* Function returns enum:                                       */
 /* Return value: The inserted new UID                           */
 /* 				 On failure - Bad UID {0,0,0}                   */
 /* Complexity: O(n)                                             */
-ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
+ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,  
 			operation_func_ty operation_func,  size_t interval, void *param);
 
 /* Removes the task with the UID from the scheduler */
@@ -46,8 +48,10 @@ ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
 status_ty SchedulerRemove(scheduler_ty *scheduler, ilrd_uid_ty uid);
 
 /* Runs all the tasks according to their defined time intervals  */
-/* Returns SUCCESS and empties scheduler                         */
-/* Returns FAILURE and stops on first failed task                */
+/*  0 FINISHED                                                   */
+/*  1 STOPPED                                                    */
+/*  2 SCH_FAILURE                                                */
+/*  3 FUNC_FAILURE                                               */
 /* Complexity: O(n)                                              */
 run_status_ty SchedulerRun(scheduler_ty *scheduler);
 
