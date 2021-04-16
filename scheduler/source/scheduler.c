@@ -122,65 +122,85 @@ status_ty SchedulerRemove(scheduler_ty *scheduler, ilrd_uid_ty uid)
 /******************************************************************************/
 run_status_ty SchedulerRun(scheduler_ty *scheduler)
 {
-	void *task_to_run = NULL
+	task_ty *task_to_run;
+	oper_ret_ty ret_status = 0;
 
-	while(!SchedulerIsEmpty(scheduler) && scheduler->to_stop == FALSE)
+	assert(scheduler);
+
+	while(!SchedulerIsEmpty(scheduler) && FALSE == scheduler->to_stop)
 	{
-		task_to_run = PqueueDequeue(scheduler->tasks);
+		task_to_run = (task_ty *)PqueueDequeue(scheduler->tasks);
 
-		while (0 != sleep(TaskGetTimeToRun(task_to_run) - time(0))){}
-
-		now it's the right time for the task to run:
-
-		status = TaskRun(task_to_run);
-
-		swtich(status)
+		/*	check if the expected time to run of the task is yet to come
+			and pause the process until the time is right	*/
+		while (TaskGetTimeToRun(task_to_run) > CURRENT_TIME)
 		{
-		case 1(NOT_DONE):
-		TaskSetTimeToRun(task_to_run, time(0));
-		PqueueEnqueue(scheduler->pqueue, task_to_run)
-		if enqueue succeedeed:
-		break;
-		else:
-		return SCH_FAILURE; (failed to enqueue the task)
-
-		case 0(done):
-		TaskDestroy(task_to_run)
-		return SCH_FAILURE;
-
-		case -1(failed):
-		TaskDestroy(task_to_run)
-		return FUNC_FAILURE; (failed to complete the task)
-		break;
+			sleep(TaskGetTimeToRun(task_to_run) - CURRENT_TIME);
 		}
+		
+		ret_status = TaskRun(task_to_run);
 
-		out of the loop, which means the scheduler is empty or has been stopped:
+		switch(ret_status)
+		{
+			case NOT_DONE:
+				TaskSetTimeToRun(task_to_run, CURRENT_TIME);
+				if (SUCCESS == PqueueEnqueue(scheduler->tasks, task_to_run))
+				{
+					break;
+				}
+				else
+				{
+					return (SCH_FAILURE);
+				}
 
-		if SchedulerIsEmpty:
-		return FINISHED
-		else
-		return STOPPED
+			case DONE:
+				TaskDestroy(task_to_run);
+				break;
+
+			case FAILURE:
+				TaskDestroy(task_to_run);
+				return (FUNC_FAILURE);
+		}	
 	}
+	
+	if (SchedulerIsEmpty(scheduler))
+		{
+			return	(FINISHED);
+		}
+		else
+		{
+			return (STOPPED);
+		}
 }
 /******************************************************************************/
 void SchedulerStop(scheduler_ty *scheduler)
 {
-
+	assert(scheduler);
+	
+	scheduler->to_stop = TRUE;
 }
 /******************************************************************************/ 
 size_t SchedulerSize(const scheduler_ty *scheduler)
 {
-
+	assert(scheduler);
+	
+	return (PqueueSize(scheduler->tasks));
 }
 /******************************************************************************/
 boolean_ty SchedulerIsEmpty(const scheduler_ty *scheduler)
 {
-
+	return (PqueueIsEmpty(scheduler->tasks));
 }
 /******************************************************************************/
 void SchedulerClear(scheduler_ty *scheduler)
 {
-
+	assert(scheduler);
+	
+	while (!SchedulerIsEmpty)
+	{
+		TaskDestroy(PqueuePeek(scheduler->tasks));
+		PqueueDequeue(scheduler->tasks);
+	}
 }
 /******************************************************************************/
 /*	Returns a positive value if task2 has an
