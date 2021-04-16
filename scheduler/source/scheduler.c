@@ -11,14 +11,13 @@
 #include <assert.h>				/*	assert			*/
 #include <stddef.h>				/*	size_t, NULL	*/
 #include <stdlib.h>				/*	malloc, free	*/
-
-
-#include "pqueue.h"				/*	priority queue API wrapper				*/
+#include <unistd.h>				/*	sleep			*/
+#include <stdio.h>
+#include "pqueue.h"				/*	priority queue structure API wrapper	*/
 #include "UID.h"				/*	UIDIsEqual, UIDGetBadUID				*/
 #include "utils.h"				/*	status_ty, boolean_ty					*/
 #include "task.h"				/*	scheduler's tasks implementation		*/
 #include "operation_func.h"		/*	operation_func_ty definition			*/
-#include <unistd.h>				/*	sleep									*/
 #include "scheduler.h"
 
 /***************************** Macros Definitions *****************************/
@@ -69,9 +68,12 @@ void SchedulerDestroy(scheduler_ty *scheduler)
 {
 	if (NULL != scheduler)
 	{
-		if (!SchedulerIsEmpty(scheduler))
+		printf("\nGONNA DESTORY\n");
+		printf("IsEmpty ?? : %d\n", SchedulerIsEmpty(scheduler));
+		if (SchedulerIsEmpty(scheduler))
 		{
 			SchedulerClear(scheduler);
+			printf("CLEARED SCE\n");
 		}
 			
 		PqueueDestroy(scheduler->tasks);
@@ -90,7 +92,7 @@ ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
 	assert(scheduler);
 	assert(operation_func);
 	
-	new_task = TaskCreate(operation_func, interval, CURRENT_TIME, param);
+	new_task = TaskCreate(operation_func, interval, (time_t)CURRENT_TIME, param);
 
 	/*	if the task was successfully created and added to the scheduler		*/
 	if (new_task && (SUCCESS == PqueueEnqueue(scheduler->tasks, new_task)))
@@ -198,7 +200,7 @@ size_t SchedulerSize(const scheduler_ty *scheduler)
 /******************************************************************************/
 boolean_ty SchedulerIsEmpty(const scheduler_ty *scheduler)
 {
-	return (PqueueIsEmpty(scheduler->tasks));
+	return (!PqueueIsEmpty(scheduler->tasks));
 }
 /******************************************************************************/
 void SchedulerClear(scheduler_ty *scheduler)
@@ -208,7 +210,9 @@ void SchedulerClear(scheduler_ty *scheduler)
 	while (!SchedulerIsEmpty(scheduler))
 	{
 		TaskDestroy(PqueuePeek(scheduler->tasks));
+		printf("TASK DESTROYED\n");
 		PqueueDequeue(scheduler->tasks);
+		printf("TASK DEQEUEUD\n");
 	}
 }
 /******************************************************************************/

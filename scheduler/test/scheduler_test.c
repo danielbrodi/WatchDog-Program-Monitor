@@ -16,6 +16,7 @@
 #include "scheduler.h"
 #include "task.h"
 #include "utils.h"	/*	status_ty, boolean_ty, ANSI_COLOR_	*/
+#include "operation_func.h"
 
 /***************************** Macros Definitions *****************************/
 /* print colored output */
@@ -28,11 +29,12 @@
 #define INT_TO_VOID_PTR(int_x) (void *)(long)(int_x)
 #define VOID_PTR_TO_INT(void_ptr) (int)(long)(void_ptr)
 /**************************** Forward Declarations ****************************/
+oper_ret_ty PrintHello(void *param);
 static void SchedulerCreateTest(scheduler_ty *scheduler);
 static void SchedulerDestroyTest(scheduler_ty *scheduler);
 static void SchedulerAddTest(scheduler_ty *scheduler);
 /*static void SchedulerRemoveTest(scheduler_ty *scheduler);*/
-/*static void SchedulerRunTest(scheduler_ty *scheduler);*/
+static void SchedulerRunTest(scheduler_ty *scheduler);
 /*static void SchedulerIsEmptyTest(scheduler_ty *scheduler);*/
 static void SchedulerSizeTest(scheduler_ty *scheduler);
 /*static void SchedulerClearTest(scheduler_ty *scheduler);*/
@@ -49,7 +51,7 @@ int main()
 	SchedulerCreateTest(new_scheduler);
 	SchedulerAddTest(new_scheduler);
 	SchedulerSizeTest(new_scheduler);
-/*	PqueueSortingTest(new_scheduler);*/
+	SchedulerRunTest(new_scheduler);
 /*	PqueueClearTest(new_scheduler);*/
 /*	PqueueEraseTest(new_scheduler);*/
 	SchedulerDestroyTest(new_scheduler);
@@ -75,18 +77,28 @@ static void SchedulerDestroyTest(scheduler_ty *scheduler)
 static void SchedulerAddTest(scheduler_ty *scheduler)
 {
 	boolean_ty is_working = TRUE;
-	int x = 3;
+	long x = 3;
+	size_t interval = 3;
 	
-	SchedulerAdd(scheduler, 3, (void *)x)
+	SchedulerAdd(scheduler, PrintHello, interval, (void *)x);
 	
 	is_working ? PRINT_SUCCESS : PRINT_FAILURE;
 }
 /******************************************************************************/
-static void SchedulerSizeTest(scheduler_ty *scheduler);
+static void SchedulerSizeTest(scheduler_ty *scheduler)
+{
+	printf("SIZE: %ld\n", SchedulerSize(scheduler));
+}
 /******************************************************************************/
 oper_ret_ty PrintHello(void *param)
 {
+	(void)(param);
 	printf("Hello");
-	return (done);
+	return (DONE);
+}
+/******************************************************************************/
+static void SchedulerRunTest(scheduler_ty *scheduler)
+{
+	printf("STATUS: %d", SchedulerRun(scheduler));
 }
 /******************************************************************************/
