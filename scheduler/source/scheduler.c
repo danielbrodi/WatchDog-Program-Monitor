@@ -187,8 +187,10 @@ void SchedulerClear(scheduler_ty *scheduler)
 	earlier expected time to run than task1	*/
 int SortTasks(const void *task1, const void *task2)
 {
-	return	(TIME_TO_INT(VOID_PTR_TO_TASK_PTR(task1)->time_to_run -
-									VOID_PTR_TO_TASK_PTR(task2)->time_to_run));
+	time_t expected_time_task1 = TaskGetTimeToRun(VOID_PTR_TO_TASK_PTR(task1));
+	time_t expected_time_task2 = TaskGetTimeToRun(VOID_PTR_TO_TASK_PTR(task2));
+	
+	return	(TIME_TO_INT(expected_time_task1 - expected_time_task2));
 }
 /******************************************************************************/
 /* first paramater is each element's data in the scheduler which means a task.
