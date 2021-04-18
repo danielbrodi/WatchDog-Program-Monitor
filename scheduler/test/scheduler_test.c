@@ -31,12 +31,9 @@ oper_ret_ty Func3(void *param);
 static void RunTests(scheduler_ty *scheduler);
 static void SchedulerCreateTest(scheduler_ty *scheduler);
 static void SchedulerDestroyTest(scheduler_ty *scheduler);
-static void SchedulerAddTest(scheduler_ty *scheduler);
-/*static void SchedulerRemoveTest(scheduler_ty *scheduler);*/
+static void SchedulerSortingTest(scheduler_ty *scheduler);
+static void SchedulerClearTest(scheduler_ty *scheduler);
 static void SchedulerRunTest(scheduler_ty *scheduler);
-/*static void SchedulerIsEmptyTest(scheduler_ty *scheduler);*/
-static void SchedulerSizeTest(scheduler_ty *scheduler);
-/*static void SchedulerClearTest(scheduler_ty *scheduler);*/
 
 time_t start_time;
 
@@ -47,8 +44,6 @@ typedef struct input
 }input_ty;
 
 input_ty input1, input2, input3;
-
-static void (*TestFuncs[5]) (scheduler_ty *schedule);
 /******************************* Main__Function *******************************/
 int main()	
 {
@@ -72,9 +67,8 @@ int main()
 	
 	return (0);
 }
-
+/******************************************************************************/
 /************************Test Functions Implementations************************/
-
 static void SchedulerCreateTest(scheduler_ty *scheduler)
 {
 	printf("\nTask Scheduler Creation Test: ");
@@ -88,86 +82,131 @@ static void SchedulerDestroyTest(scheduler_ty *scheduler)
 															ANSI_COLOR_RESET);
 }
 /******************************************************************************/
-static void SchedulerAddTest(scheduler_ty *scheduler)
+static void SchedulerSortingTest(scheduler_ty *scheduler)
 {
-	
+	ilrd_uid_ty ret1, ret2, ret3;
 	boolean_ty is_working = TRUE;
-	printf("ADDING 3 elements: ");
+	
+	ret1 = SchedulerAdd(scheduler, Func1, 1, &input1);
+	is_working *= !UIDIsEqual(ret1, UIDGetBadUID());
+	
+	ret2 = SchedulerAdd(scheduler, Func2, 2, &input2);
+	is_working *= !UIDIsEqual(ret2, UIDGetBadUID());
+	
+	ret3 = SchedulerAdd(scheduler, Func3, 3, &input3);
+	is_working *= !UIDIsEqual(ret3, UIDGetBadUID());
+	
+	is_working *= (3 == SchedulerSize(scheduler));
+	
+	is_working *= (SUCCESS == SchedulerRemove(scheduler, ret1));
+	is_working *= (SUCCESS == SchedulerRemove(scheduler, ret2));
+	is_working *= (SUCCESS == SchedulerRemove(scheduler, ret3));
+	
+	is_working *= SchedulerIsEmpty(scheduler);
+	
+	printf("Task Scheduler Add&Remove Tests: ");
+	is_working ? PRINT_SUCCESS : PRINT_FAILURE;
+}
+/******************************************************************************/
+static void SchedulerClearTest(scheduler_ty *scheduler)
+{
+	boolean_ty is_working = TRUE;
+	
 	SchedulerAdd(scheduler, Func1, 1, &input1);
 	SchedulerAdd(scheduler, Func2, 2, &input2);
 	SchedulerAdd(scheduler, Func3, 3, &input3);
 	
+	is_working *= (3 == SchedulerSize(scheduler));
+	
+	SchedulerClear(scheduler);
+	is_working *= SchedulerIsEmpty(scheduler);
+	
+	printf("Task Scheduler Clear Test: ");
 	is_working ? PRINT_SUCCESS : PRINT_FAILURE;
 }
 /******************************************************************************/
-static void SchedulerSizeTest(scheduler_ty *scheduler)
+static void SchedulerRunTest(scheduler_ty *scheduler)
 {
-	printf("SIZE_AFTER_3_ADDS: %lu\n", SchedulerSize(scheduler));
+	boolean_ty is_working = TRUE;
+	
+	SchedulerAdd(scheduler, Func1, 1, &input1);
+	SchedulerAdd(scheduler, Func2, 2, &input2);
+	SchedulerAdd(scheduler, Func3, 3, &input3);
+	
+	is_working *= (3 == SchedulerSize(scheduler));
+	
+	is_working *= (FINISHED == SchedulerRun(scheduler));
+	
+	printf("Task Scheduler Run Test: ");
+	is_working ? PRINT_SUCCESS : PRINT_FAILURE;
 }
 /******************************************************************************/
+
 oper_ret_ty Func1(void *param)
 {
 	input_ty *input = (input_ty *)param;
+	
 	++(input->counter);
+	
 	printf("Every 1 seconds: %lu\n", CURRENT_TIME-start_time);
-	printf("Counter: %lu\n\n", (input->counter));
-	if (10 == (input->counter))
+	printf("Counter: %lu\n\n", input->counter);
+	
+	if (10 == input->counter)
 	{
-	return (DONE);
+/*		SchedulerStop(input->scheduler);*/
+		 return (DONE); 
 	}
-	else
-	{
+	
 	return (NOT_DONE);
-	}
 }
 /******************************************************************************/
 oper_ret_ty Func2(void *param)
 {
 	input_ty *input = (input_ty *)param;
+	
 	++(input->counter);
+	
 	printf("Every 2 seconds: %lu\n", CURRENT_TIME-start_time);
-	printf("Counter: %lu\n\n", (input->counter));
-	if (10 == (input->counter))
+	printf("Counter: %lu\n\n", input->counter);
+	
+	if (10 == input->counter)
 	{
-	return (DONE);
+		return (DONE);
 	}
-	else
-	{
+	
 	return (NOT_DONE);
-	}
 }
 /******************************************************************************/
 oper_ret_ty Func3(void *param)
 {
 	input_ty *input = (input_ty *)param;
+	
 	++(input->counter);
-	printf("Every 3 seconds: %lu\n", CURRENT_TIME-start_time);
-	printf("Counter: %lu\n\n", (input->counter));
-	if (10 == (input->counter))
+	
+	printf("Every 3 seconds: %lu\n", CURRENT_TIME - start_time);
+	printf("Counter: %lu\n\n", input->counter);
+	
+	if (10 == input->counter)
 	{
-	return (DONE);
+		return (DONE);
 	}
-	else
-	{
+	
 	return (NOT_DONE);
-	}
-}
-/******************************************************************************/
-static void SchedulerRunTest(scheduler_ty *scheduler)
-{
-	printf("STATUS RUN (0 is DONE): %d", SchedulerRun(scheduler));
 }
 /******************************************************************************/
 static void RunTests(scheduler_ty *scheduler)
 {
+	static void (*TestFuncs[5]) (scheduler_ty *schedule);
+	
 	size_t i = 0;
+	
 	TestFuncs[0] = SchedulerCreateTest;
-	TestFuncs[1] = SchedulerAddTest;
-	TestFuncs[2] = SchedulerSizeTest;
+	TestFuncs[1] = SchedulerSortingTest;
+	TestFuncs[2] = SchedulerClearTest;
 	TestFuncs[3] = SchedulerRunTest;
 	TestFuncs[4] = SchedulerDestroyTest;
 	
-	while(i<5)
+	while(i < 5)
 	{
 		(*TestFuncs[i]) (scheduler);
 		++i;

@@ -193,6 +193,7 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 		}
 		else
 		{
+			printf("\nSTOPPED\n");
 			return (STOPPED);
 		}
 }
