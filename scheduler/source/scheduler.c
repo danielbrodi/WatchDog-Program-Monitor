@@ -2,7 +2,7 @@
 * File:			scheduler.c						 		  								
 * Author:		Daniel Brodsky					  								
 * Date:			16/04/2021							   								
-* Version:		1.0	(Pre-Review)						
+* Version:		1.0	(Reviewed)			
 * Reviewer:		Olga						   								
 * Description:	Implementation of a task scheduler.		 
 \******************************************************************************/
@@ -11,10 +11,11 @@
 #include <assert.h>				/*	assert			*/
 #include <stddef.h>				/*	size_t, NULL	*/
 #include <stdlib.h>				/*	malloc, free	*/
+#include <time.h> 				/*	time_t, time() 	*/
 #include <unistd.h>				/*	sleep			*/
 
 #include "pqueue.h"				/*	priority queue structure API wrapper	*/
-#include "UID.h"				/*	UIDIsEqual, UIDGetBadUID				*/
+#include "UID.h"				/*	UIDIsEqual, UIDGetBadUID, ilrd_uid_ty	*/
 #include "utils.h"				/*	status_ty, boolean_ty					*/
 #include "task.h"				/*	scheduler's tasks implementation		*/
 #include "operation_func.h"		/*	operation_func_ty definition			*/
@@ -129,8 +130,11 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 	task_ty *task_to_run = NULL;
 	oper_ret_ty ret_status = NOT_DONE;
 	time_t time_to_sleep = 0;
+	
 	assert(scheduler);
 
+	scheduler->to_stop = FALSE;
+	
 	while(!SchedulerIsEmpty(scheduler) && FALSE == scheduler->to_stop)
 	{
 		task_to_run = (task_ty *)PqueueDequeue(scheduler->tasks);
@@ -199,6 +203,8 @@ size_t SchedulerSize(const scheduler_ty *scheduler)
 /******************************************************************************/
 boolean_ty SchedulerIsEmpty(const scheduler_ty *scheduler)
 {
+	assert(scheduler);
+	
 	return (PqueueIsEmpty(scheduler->tasks));
 }
 /******************************************************************************/
@@ -208,8 +214,7 @@ void SchedulerClear(scheduler_ty *scheduler)
 	
 	while (!SchedulerIsEmpty(scheduler))
 	{
-		TaskDestroy(PqueuePeek(scheduler->tasks));
-		PqueueDequeue(scheduler->tasks);
+		TaskDestroy(PqueueDequeue(scheduler->tasks));
 	}
 }
 /******************************************************************************/

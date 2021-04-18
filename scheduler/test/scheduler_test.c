@@ -2,7 +2,7 @@
 * File:			scheduler_test.c						 		  								
 * Author:		Daniel Brodsky					  								
 * Date:			16/04/2021							   								
-* Version:		1.0	(Pre=Review)						
+* Version:		1.0	(Reviewed)					
 * Reviewer:		Olga							   								
 * Description:	Testing file of the implementation of a task scheduler.		 
 \******************************************************************************/
@@ -10,10 +10,11 @@
 /********************************* Inclusions *********************************/
 #include <stddef.h>				/*	size_t			*/
 #include <stdio.h>				/*	printf, NULL	*/
-#include <time.h>				/*	time			*/
+#include <time.h> 				/*	time_t, time() 	*/
 
 #include "scheduler.h"			/*	task scheduler implementation			*/
 #include "task.h"				/*	scheduler's tasks implementation		*/
+#include "UID.h"				/*	UIDIsEqual, UIDGetBadUID, ilrd_uid_ty	*/
 #include "utils.h"				/*	status_ty, boolean_ty, ANSI_COLOR_		*/
 #include "operation_func.h"		/*	operation_func_ty definition			*/
 
