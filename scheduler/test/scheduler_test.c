@@ -46,7 +46,6 @@ input_ty input1, input2, input3;
 /******************************* Main__Function *******************************/
 int main()	
 {
-
 	/*	Initializing a new empty scheduler	*/
 	scheduler_ty *new_scheduler = SchedulerCreate();
 	
