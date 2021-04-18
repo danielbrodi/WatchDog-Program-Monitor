@@ -53,7 +53,7 @@ task_ty *TaskCreate(operation_func_ty func, size_t interval,
 	
 	new_task->func = func;
 	new_task->interval = interval;
-	new_task->time_to_run = time_to_run;
+	new_task->time_to_run = time_to_run + interval;
 	new_task->param = param;
 	
 	return (new_task);	

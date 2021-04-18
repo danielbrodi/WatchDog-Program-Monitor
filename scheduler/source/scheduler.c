@@ -135,19 +135,21 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 {
 	task_ty *task_to_run = NULL;
 	oper_ret_ty ret_status = NOT_DONE;
-
+	time_t time_to_sleep = 0;
 	assert(scheduler);
 
 	while(!SchedulerIsEmpty(scheduler) && FALSE == scheduler->to_stop)
 	{
 		printf("\n\n***SCHEDULER RUNS:***\n\n");
 		task_to_run = (task_ty *)PqueueDequeue(scheduler->tasks);
-
+		time_to_sleep = TaskGetTimeToRun(task_to_run) - CURRENT_TIME;
+		
 		/*	check if the expected time to run of the task is yet to come
 			and pause the process until the time is right	*/
-		while (TaskGetTimeToRun(task_to_run) > CURRENT_TIME)
+		while (time_to_sleep)
 		{
-			sleep(TaskGetTimeToRun(task_to_run) - CURRENT_TIME);
+			printf("TIME TO SLEEP: %lu\n", time_to_sleep);
+			time_to_sleep = sleep(time_to_sleep);
 		}
 		
 		ret_status = TaskRun(task_to_run);
@@ -232,7 +234,7 @@ int SortTasks(const void *task1, const void *task2)
 	time_t expected_time_task1 = TaskGetTimeToRun(VOID_PTR_TO_TASK_PTR(task1));
 	time_t expected_time_task2 = TaskGetTimeToRun(VOID_PTR_TO_TASK_PTR(task2));
 	
-	return	(TIME_TO_INT(expected_time_task1 - expected_time_task2));
+	return	(TIME_TO_INT(expected_time_task2 - expected_time_task1));
 }
 /******************************************************************************/
 /* first paramater is each element's data in the scheduler which means a task.

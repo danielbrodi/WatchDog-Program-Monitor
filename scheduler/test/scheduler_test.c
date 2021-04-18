@@ -29,7 +29,9 @@
 #define INT_TO_VOID_PTR(int_x) (void *)(long)(int_x)
 #define VOID_PTR_TO_INT(void_ptr) (int)(long)(void_ptr)
 /**************************** Forward Declarations ****************************/
-oper_ret_ty PrintHello(void *param);
+oper_ret_ty Func1(void *param);
+oper_ret_ty Func2(void *param);
+oper_ret_ty Func3(void *param);
 static void SchedulerCreateTest(scheduler_ty *scheduler);
 static void SchedulerDestroyTest(scheduler_ty *scheduler);
 static void SchedulerAddTest(scheduler_ty *scheduler);
@@ -39,9 +41,14 @@ static void SchedulerRunTest(scheduler_ty *scheduler);
 static void SchedulerSizeTest(scheduler_ty *scheduler);
 /*static void SchedulerClearTest(scheduler_ty *scheduler);*/
 
+size_t counter1 = 0;
+size_t counter2 = 0;
+size_t counter3 = 0;
+
 /******************************* Main__Function *******************************/
 int main()	
 {
+
 	/*	Intializing a new empty scheduler	*/
 	scheduler_ty *new_scheduler = SchedulerCreate();
 	
@@ -77,15 +84,10 @@ static void SchedulerDestroyTest(scheduler_ty *scheduler)
 static void SchedulerAddTest(scheduler_ty *scheduler)
 {
 	boolean_ty is_working = TRUE;
-	size_t counter1 = 0;
-	size_t counter2 = 0;
-	size_t counter3 = 0;
 	printf("ADDING 3 elements: ");
-	SchedulerAdd(scheduler, PrintHello, 1, (void *)&counter1);
-	printf("Count: %lu\n", counter1);
-	SchedulerAdd(scheduler, PrintHello, 2, (void *)&counter2);
-	printf("Count: %lu\n", counter2);
-	SchedulerAdd(scheduler, PrintHello, 3, (void *)&counter3);
+	SchedulerAdd(scheduler, Func1, 1, (void *)&counter1);
+	SchedulerAdd(scheduler, Func2, 2, (void *)&counter2);
+	SchedulerAdd(scheduler, Func3, 3, (void *)&counter3);
 	
 	is_working ? PRINT_SUCCESS : PRINT_FAILURE;
 }
@@ -95,11 +97,33 @@ static void SchedulerSizeTest(scheduler_ty *scheduler)
 	printf("SIZE_AFTER_3_ADDS: %lu\n", SchedulerSize(scheduler));
 }
 /******************************************************************************/
-oper_ret_ty PrintHello(void *param)
+oper_ret_ty Func1(void *param)
+{
+	size_t *i = (size_t *)param;
+	*i += 1;
+	printf("Func1: %lu\n", *i);
+	if (10 == *i)
+	return (DONE);
+	else
+	return (NOT_DONE);
+}
+/******************************************************************************/
+oper_ret_ty Func2(void *param)
 {
 	size_t *i = (size_t *)param;
 	++(*i);
-	printf("Count: %p\n", *i);
+	printf("Func2: %lu\n", *i);
+	if (10 == *i)
+	return (DONE);
+	else
+	return (NOT_DONE);
+}
+/******************************************************************************/
+oper_ret_ty Func3(void *param)
+{
+	size_t *i = (size_t *)param;
+	++(*i);
+	printf("Func3: %lu\n", *i);
 	if (10 == *i)
 	return (DONE);
 	else
