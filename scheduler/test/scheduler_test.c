@@ -23,15 +23,12 @@
 #define PRINT_SUCCESS printf (ANSI_COLOR_GREEN "SUCCESS\n" ANSI_COLOR_RESET)
 #define PRINT_FAILURE printf (ANSI_COLOR_RED "FAILURE\n" ANSI_COLOR_RESET)
 
-/* generates random number from 1 to 100 */
-#define RANDOM_NUM ((rand() % 100) + 1)
-
-#define INT_TO_VOID_PTR(int_x) (void *)(long)(int_x)
-#define VOID_PTR_TO_INT(void_ptr) (int)(long)(void_ptr)
+#define CURRENT_TIME time(0)
 /**************************** Forward Declarations ****************************/
 oper_ret_ty Func1(void *param);
 oper_ret_ty Func2(void *param);
 oper_ret_ty Func3(void *param);
+static void RunTests(scheduler_ty *scheduler);
 static void SchedulerCreateTest(scheduler_ty *scheduler);
 static void SchedulerDestroyTest(scheduler_ty *scheduler);
 static void SchedulerAddTest(scheduler_ty *scheduler);
@@ -41,7 +38,7 @@ static void SchedulerRunTest(scheduler_ty *scheduler);
 static void SchedulerSizeTest(scheduler_ty *scheduler);
 /*static void SchedulerClearTest(scheduler_ty *scheduler);*/
 
-time_t runtime;
+time_t start_time;
 
 typedef struct input
 {
@@ -56,12 +53,11 @@ static void (*TestFuncs[5]) (scheduler_ty *schedule);
 int main()	
 {
 
-	/*	Intializing a new empty scheduler	*/
+	/*	Initializing a new empty scheduler	*/
 	scheduler_ty *new_scheduler = SchedulerCreate();
 	
-	runtime = time(0);
-	/*	Intializing a random number generator	*/
-	srand(time(0));
+	/*	Initializing the starting time of the program	*/
+	start_time = time(0);
 	
 	/*	Assigning the new scheduler and a counter to the input structure	*/
 	input1.scheduler = new_scheduler;
@@ -72,13 +68,7 @@ int main()
 	input3.counter = 0;
 	
 	/* Run tests */
-	SchedulerCreateTest(new_scheduler);
-	SchedulerAddTest(new_scheduler);
-	SchedulerSizeTest(new_scheduler);
-	SchedulerRunTest(new_scheduler);
-/*	PqueueClearTest(new_scheduler);*/
-/*	PqueueEraseTest(new_scheduler);*/
-	SchedulerDestroyTest(new_scheduler);
+	RunTests(new_scheduler);
 	
 	return (0);
 }
@@ -117,35 +107,50 @@ static void SchedulerSizeTest(scheduler_ty *scheduler)
 /******************************************************************************/
 oper_ret_ty Func1(void *param)
 {
-	++((*(input_ty *)param).counter);
-	printf("Every 1 seconds: %lu\n", time(0)-runtime);
-	printf("Counter: %lu\n\n", (*(input_ty *)param).counter);
-	if (10 == (*(input_ty *)param).counter)
+	input_ty *input = (input_ty *)param;
+	++(input->counter);
+	printf("Every 1 seconds: %lu\n", CURRENT_TIME-start_time);
+	printf("Counter: %lu\n\n", (input->counter));
+	if (10 == (input->counter))
+	{
 	return (DONE);
+	}
 	else
+	{
 	return (NOT_DONE);
+	}
 }
 /******************************************************************************/
 oper_ret_ty Func2(void *param)
 {
-	++((*(input_ty *)param).counter);
-	printf("Every 2 seconds: %lu\n", time(0)-runtime);
-	printf("Counter: %lu\n\n", (*(input_ty *)param).counter);
-	if (10 == (*(input_ty *)param).counter)
+	input_ty *input = (input_ty *)param;
+	++(input->counter);
+	printf("Every 2 seconds: %lu\n", CURRENT_TIME-start_time);
+	printf("Counter: %lu\n\n", (input->counter));
+	if (10 == (input->counter))
+	{
 	return (DONE);
+	}
 	else
+	{
 	return (NOT_DONE);
+	}
 }
 /******************************************************************************/
 oper_ret_ty Func3(void *param)
 {
-	++((*(input_ty *)param).counter);
-	printf("Every 3 seconds: %lu\n", time(0)-runtime);
-	printf("Counter: %lu\n\n", (*(input_ty *)param).counter);
-	if (10 == (*(input_ty *)param).counter)
+	input_ty *input = (input_ty *)param;
+	++(input->counter);
+	printf("Every 3 seconds: %lu\n", CURRENT_TIME-start_time);
+	printf("Counter: %lu\n\n", (input->counter));
+	if (10 == (input->counter))
+	{
 	return (DONE);
+	}
 	else
+	{
 	return (NOT_DONE);
+	}
 }
 /******************************************************************************/
 static void SchedulerRunTest(scheduler_ty *scheduler)
@@ -153,7 +158,19 @@ static void SchedulerRunTest(scheduler_ty *scheduler)
 	printf("STATUS RUN (0 is DONE): %d", SchedulerRun(scheduler));
 }
 /******************************************************************************/
-static void RunTests(scheduler *scheduler)
+static void RunTests(scheduler_ty *scheduler)
 {
-	TestFuncs[0] = CreateTest;
+	size_t i = 0;
+	TestFuncs[0] = SchedulerCreateTest;
+	TestFuncs[1] = SchedulerAddTest;
+	TestFuncs[2] = SchedulerSizeTest;
+	TestFuncs[3] = SchedulerRunTest;
+	TestFuncs[4] = SchedulerDestroyTest;
+	
+	while(i<5)
+	{
+		(*TestFuncs[i]) (scheduler);
+		++i;
+	}
 }
+/******************************************************************************/
