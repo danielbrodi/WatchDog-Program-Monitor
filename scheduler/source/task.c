@@ -2,7 +2,7 @@
 * File:			task.c						 		  								
 * Author:		Daniel Brodsky					  								
 * Date:			16/04/2021							   								
-* Version:		1.0	(Pre-Review)						
+* Version:		1.0	(Reviewed)				
 * Reviewer:		Olga						   								
 * Description:	Implementation of a task element inside of a task scheduler.		 
 \******************************************************************************/
