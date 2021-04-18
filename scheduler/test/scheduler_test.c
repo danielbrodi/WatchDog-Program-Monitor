@@ -41,10 +41,17 @@ static void SchedulerRunTest(scheduler_ty *scheduler);
 static void SchedulerSizeTest(scheduler_ty *scheduler);
 /*static void SchedulerClearTest(scheduler_ty *scheduler);*/
 
-size_t counter1 = 0;
-size_t counter2 = 0;
-size_t counter3 = 0;
+time_t runtime;
 
+typedef struct input
+{
+	scheduler_ty *scheduler;
+	size_t counter;
+}input_ty;
+
+input_ty input1, input2, input3;
+
+static void (*TestFuncs[5]) (scheduler_ty *schedule);
 /******************************* Main__Function *******************************/
 int main()	
 {
@@ -52,9 +59,19 @@ int main()
 	/*	Intializing a new empty scheduler	*/
 	scheduler_ty *new_scheduler = SchedulerCreate();
 	
+	runtime = time(0);
 	/*	Intializing a random number generator	*/
 	srand(time(0));
 	
+	/*	Assigning the new scheduler and a counter to the input structure	*/
+	input1.scheduler = new_scheduler;
+	input2.scheduler = new_scheduler;
+	input3.scheduler = new_scheduler;
+	input1.counter = 0;
+	input2.counter = 0;
+	input3.counter = 0;
+	
+	/* Run tests */
 	SchedulerCreateTest(new_scheduler);
 	SchedulerAddTest(new_scheduler);
 	SchedulerSizeTest(new_scheduler);
@@ -83,11 +100,12 @@ static void SchedulerDestroyTest(scheduler_ty *scheduler)
 /******************************************************************************/
 static void SchedulerAddTest(scheduler_ty *scheduler)
 {
+	
 	boolean_ty is_working = TRUE;
 	printf("ADDING 3 elements: ");
-	SchedulerAdd(scheduler, Func1, 1, (void *)&counter1);
-	SchedulerAdd(scheduler, Func2, 2, (void *)&counter2);
-	SchedulerAdd(scheduler, Func3, 3, (void *)&counter3);
+	SchedulerAdd(scheduler, Func1, 1, &input1);
+	SchedulerAdd(scheduler, Func2, 2, &input2);
+	SchedulerAdd(scheduler, Func3, 3, &input3);
 	
 	is_working ? PRINT_SUCCESS : PRINT_FAILURE;
 }
@@ -99,10 +117,10 @@ static void SchedulerSizeTest(scheduler_ty *scheduler)
 /******************************************************************************/
 oper_ret_ty Func1(void *param)
 {
-	size_t *i = (size_t *)param;
-	*i += 1;
-	printf("Func1: %lu\n", *i);
-	if (10 == *i)
+	++((*(input_ty *)param).counter);
+	printf("Every 1 seconds: %lu\n", time(0)-runtime);
+	printf("Counter: %lu\n\n", (*(input_ty *)param).counter);
+	if (10 == (*(input_ty *)param).counter)
 	return (DONE);
 	else
 	return (NOT_DONE);
@@ -110,10 +128,10 @@ oper_ret_ty Func1(void *param)
 /******************************************************************************/
 oper_ret_ty Func2(void *param)
 {
-	size_t *i = (size_t *)param;
-	++(*i);
-	printf("Func2: %lu\n", *i);
-	if (10 == *i)
+	++((*(input_ty *)param).counter);
+	printf("Every 2 seconds: %lu\n", time(0)-runtime);
+	printf("Counter: %lu\n\n", (*(input_ty *)param).counter);
+	if (10 == (*(input_ty *)param).counter)
 	return (DONE);
 	else
 	return (NOT_DONE);
@@ -121,10 +139,10 @@ oper_ret_ty Func2(void *param)
 /******************************************************************************/
 oper_ret_ty Func3(void *param)
 {
-	size_t *i = (size_t *)param;
-	++(*i);
-	printf("Func3: %lu\n", *i);
-	if (10 == *i)
+	++((*(input_ty *)param).counter);
+	printf("Every 3 seconds: %lu\n", time(0)-runtime);
+	printf("Counter: %lu\n\n", (*(input_ty *)param).counter);
+	if (10 == (*(input_ty *)param).counter)
 	return (DONE);
 	else
 	return (NOT_DONE);
@@ -135,3 +153,7 @@ static void SchedulerRunTest(scheduler_ty *scheduler)
 	printf("STATUS RUN (0 is DONE): %d", SchedulerRun(scheduler));
 }
 /******************************************************************************/
+static void RunTests(scheduler *scheduler)
+{
+	TestFuncs[0] = CreateTest;
+}
