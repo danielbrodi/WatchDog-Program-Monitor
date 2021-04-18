@@ -134,6 +134,8 @@ static void SchedulerRunTest(scheduler_ty *scheduler)
 	
 	is_working *= (3 == SchedulerSize(scheduler));
 	
+	printf (ANSI_COLOR_CYAN "\n**Scheduler Start to Run:**\n" ANSI_COLOR_RESET);
+	
 	is_working *= (FINISHED == SchedulerRun(scheduler));
 	
 	printf("Task Scheduler Run Test: ");
@@ -143,12 +145,13 @@ static void SchedulerRunTest(scheduler_ty *scheduler)
 
 oper_ret_ty Func1(void *param)
 {
+	boolean_ty is_working = TRUE;
 	input_ty *input = (input_ty *)param;
 	
 	++(input->counter);
 	
-	printf("Every 1 seconds: %lu\n", CURRENT_TIME-start_time);
-	printf("Counter: %lu\n\n", input->counter);
+	printf("Elapsed time since beginning: %lu\n", CURRENT_TIME-start_time);
+	printf("1 second interval Counter: %lu\n\n", input->counter);
 	
 	if (10 == input->counter)
 	{
@@ -165,8 +168,8 @@ oper_ret_ty Func2(void *param)
 	
 	++(input->counter);
 	
-	printf("Every 2 seconds: %lu\n", CURRENT_TIME-start_time);
-	printf("Counter: %lu\n\n", input->counter);
+	printf("Elapsed time since beginning: %lu\n", CURRENT_TIME-start_time);
+	printf("2 seconds interval Counter: %lu\n\n", input->counter);
 	
 	if (10 == input->counter)
 	{
@@ -182,8 +185,8 @@ oper_ret_ty Func3(void *param)
 	
 	++(input->counter);
 	
-	printf("Every 3 seconds: %lu\n", CURRENT_TIME - start_time);
-	printf("Counter: %lu\n\n", input->counter);
+	printf("Elapsed time since beginning: %lu\n", CURRENT_TIME-start_time);
+	printf("3 seconds interval Counter: %lu\n\n", input->counter);
 	
 	if (10 == input->counter)
 	{
