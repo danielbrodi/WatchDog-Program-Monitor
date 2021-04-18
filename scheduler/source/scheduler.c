@@ -13,8 +13,6 @@
 #include <stdlib.h>				/*	malloc, free	*/
 #include <unistd.h>				/*	sleep			*/
 
-#include <stdio.h>
-
 #include "pqueue.h"				/*	priority queue structure API wrapper	*/
 #include "UID.h"				/*	UIDIsEqual, UIDGetBadUID				*/
 #include "utils.h"				/*	status_ty, boolean_ty					*/
@@ -70,13 +68,9 @@ void SchedulerDestroy(scheduler_ty *scheduler)
 {
 	if (NULL != scheduler)
 	{
-		printf("\nGONNA DESTORY\n");
-		printf("IsEmpty : %d\n", SchedulerIsEmpty(scheduler));
-		printf("SIZE_BEFORE_DESTROY: %ld\n", SchedulerSize(scheduler));
 		if (!SchedulerIsEmpty(scheduler))
 		{
 			SchedulerClear(scheduler);
-			printf("CLEARED SCE\n");
 		}
 			
 		PqueueDestroy(scheduler->tasks);
@@ -84,7 +78,6 @@ void SchedulerDestroy(scheduler_ty *scheduler)
 				
 		free(scheduler);
 		scheduler = NULL;
-		printf("DESTORYED SCHEDULER!\n");
 	}
 }
 /******************************************************************************/
@@ -140,7 +133,6 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 
 	while(!SchedulerIsEmpty(scheduler) && FALSE == scheduler->to_stop)
 	{
-		printf("\n\n***SCHEDULER RUNS:***\n\n");
 		task_to_run = (task_ty *)PqueueDequeue(scheduler->tasks);
 		time_to_sleep = TaskGetTimeToRun(task_to_run) - CURRENT_TIME;
 		
@@ -148,7 +140,6 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 			and pause the process until the time is right	*/
 		while (time_to_sleep)
 		{
-			printf("TIME TO SLEEP: %lu\n", time_to_sleep);
 			time_to_sleep = sleep(time_to_sleep);
 		}
 		
@@ -162,25 +153,21 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 				TaskSetTimeToRun(task_to_run, CURRENT_TIME);
 				if (SUCCESS == PqueueEnqueue(scheduler->tasks, task_to_run))
 				{
-					printf("NEW TASK ENQUEUED SUCCESSFULLY\n");
+					/*	task was successfully re-enqueued with a new time	*/
 					break;
 				}
 				else
 				{
-					printf("NEW TASK ENQUEUE FAILURE\n");
 					return (SCH_FAILURE);
 				}
 			/* in case the task is done, keep it removed and clear the memory
 				it takes and continue the run of the scheduler	*/
 			case DONE:
-				printf("NEW TASK DONE - BEFORE DESTORY\n");
 				TaskDestroy(task_to_run);
-				printf("NEW TASK DONE - AFTER DESTORY\n");
 				break;
 			/* in case the excuted operation by the task has been failed,
 				remove it from the memory and return a failure message	*/
 			case OPER_FAILURE:
-				printf("NEW TASK FAILURE TO RUN\n");
 				TaskDestroy(task_to_run);
 				return (FUNC_FAILURE);
 		}	
@@ -188,12 +175,10 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 	
 	if (SchedulerIsEmpty(scheduler))
 		{
-			printf("\nFINISHED SCHEDULER ALL TASKS ARE DONE\n");
 			return	(FINISHED);
 		}
 		else
 		{
-			printf("\nSTOPPED\n");
 			return (STOPPED);
 		}
 }

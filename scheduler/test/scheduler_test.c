@@ -8,15 +8,14 @@
 \******************************************************************************/
 
 /********************************* Inclusions *********************************/
-#include <stddef.h>	/*	size_t			*/
-#include <stdio.h>	/*	printf, NULL	*/
-#include <stdlib.h>	/*	rand, srand		*/
-#include <time.h>	/*	time			*/
+#include <stddef.h>				/*	size_t			*/
+#include <stdio.h>				/*	printf, NULL	*/
+#include <time.h>				/*	time			*/
 
-#include "scheduler.h"
-#include "task.h"
-#include "utils.h"	/*	status_ty, boolean_ty, ANSI_COLOR_	*/
-#include "operation_func.h"
+#include "scheduler.h"			/*	task scheduler implementation			*/
+#include "task.h"				/*	scheduler's tasks implementation		*/
+#include "utils.h"				/*	status_ty, boolean_ty, ANSI_COLOR_		*/
+#include "operation_func.h"		/*	operation_func_ty definition			*/
 
 /***************************** Macros Definitions *****************************/
 /* print colored output */
@@ -30,10 +29,10 @@ oper_ret_ty Func2(void *param);
 oper_ret_ty Func3(void *param);
 static void RunTests(scheduler_ty *scheduler);
 static void SchedulerCreateTest(scheduler_ty *scheduler);
-static void SchedulerDestroyTest(scheduler_ty *scheduler);
 static void SchedulerSortingTest(scheduler_ty *scheduler);
 static void SchedulerClearTest(scheduler_ty *scheduler);
 static void SchedulerRunTest(scheduler_ty *scheduler);
+static void SchedulerDestroyTest(scheduler_ty *scheduler);
 
 time_t start_time;
 

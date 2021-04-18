@@ -56,8 +56,7 @@ task_ty *TaskCreate(operation_func_ty func, size_t interval,
 	new_task->time_to_run = time_to_run + interval;
 	new_task->param = param;
 	
-	return (new_task);	
-	
+	return (new_task);
 }
 /******************************************************************************/
 void TaskDestroy(task_ty *task)
