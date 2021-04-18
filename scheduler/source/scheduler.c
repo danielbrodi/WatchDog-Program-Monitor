@@ -12,7 +12,9 @@
 #include <stddef.h>				/*	size_t, NULL	*/
 #include <stdlib.h>				/*	malloc, free	*/
 #include <unistd.h>				/*	sleep			*/
+
 #include <stdio.h>
+
 #include "pqueue.h"				/*	priority queue structure API wrapper	*/
 #include "UID.h"				/*	UIDIsEqual, UIDGetBadUID				*/
 #include "utils.h"				/*	status_ty, boolean_ty					*/
@@ -69,8 +71,9 @@ void SchedulerDestroy(scheduler_ty *scheduler)
 	if (NULL != scheduler)
 	{
 		printf("\nGONNA DESTORY\n");
-		printf("IsEmpty ?? : %d\n", SchedulerIsEmpty(scheduler));
-		if (SchedulerIsEmpty(scheduler))
+		printf("IsEmpty : %d\n", SchedulerIsEmpty(scheduler));
+		printf("SIZE_BEFORE_DESTROY: %ld\n", SchedulerSize(scheduler));
+		if (!SchedulerIsEmpty(scheduler))
 		{
 			SchedulerClear(scheduler);
 			printf("CLEARED SCE\n");
@@ -81,6 +84,7 @@ void SchedulerDestroy(scheduler_ty *scheduler)
 				
 		free(scheduler);
 		scheduler = NULL;
+		printf("DESTORYED SCHEDULER!\n");
 	}
 }
 /******************************************************************************/
@@ -92,7 +96,7 @@ ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
 	assert(scheduler);
 	assert(operation_func);
 	
-	new_task = TaskCreate(operation_func, interval, (time_t)CURRENT_TIME, param);
+	new_task = TaskCreate(operation_func, interval, CURRENT_TIME, param);
 
 	/*	if the task was successfully created and added to the scheduler		*/
 	if (new_task && (SUCCESS == PqueueEnqueue(scheduler->tasks, new_task)))
@@ -130,12 +134,13 @@ status_ty SchedulerRemove(scheduler_ty *scheduler, ilrd_uid_ty uid)
 run_status_ty SchedulerRun(scheduler_ty *scheduler)
 {
 	task_ty *task_to_run = NULL;
-	oper_ret_ty ret_status = 0;
+	oper_ret_ty ret_status = NOT_DONE;
 
 	assert(scheduler);
 
 	while(!SchedulerIsEmpty(scheduler) && FALSE == scheduler->to_stop)
 	{
+		printf("\n\n***SCHEDULER RUNS:***\n\n");
 		task_to_run = (task_ty *)PqueueDequeue(scheduler->tasks);
 
 		/*	check if the expected time to run of the task is yet to come
@@ -155,20 +160,25 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 				TaskSetTimeToRun(task_to_run, CURRENT_TIME);
 				if (SUCCESS == PqueueEnqueue(scheduler->tasks, task_to_run))
 				{
+					printf("NEW TASK ENQUEUED SUCCESSFULLY\n");
 					break;
 				}
 				else
 				{
+					printf("NEW TASK ENQUEUE FAILURE\n");
 					return (SCH_FAILURE);
 				}
 			/* in case the task is done, keep it removed and clear the memory
 				it takes and continue the run of the scheduler	*/
 			case DONE:
+				printf("NEW TASK DONE - BEFORE DESTORY\n");
 				TaskDestroy(task_to_run);
+				printf("NEW TASK DONE - AFTER DESTORY\n");
 				break;
 			/* in case the excuted operation by the task has been failed,
 				remove it from the memory and return a failure message	*/
 			case OPER_FAILURE:
+				printf("NEW TASK FAILURE TO RUN\n");
 				TaskDestroy(task_to_run);
 				return (FUNC_FAILURE);
 		}	
@@ -176,6 +186,7 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 	
 	if (SchedulerIsEmpty(scheduler))
 		{
+			printf("\nFINISHED SCHEDULER ALL TASKS ARE DONE\n");
 			return	(FINISHED);
 		}
 		else
@@ -200,7 +211,7 @@ size_t SchedulerSize(const scheduler_ty *scheduler)
 /******************************************************************************/
 boolean_ty SchedulerIsEmpty(const scheduler_ty *scheduler)
 {
-	return (!PqueueIsEmpty(scheduler->tasks));
+	return (PqueueIsEmpty(scheduler->tasks));
 }
 /******************************************************************************/
 void SchedulerClear(scheduler_ty *scheduler)
@@ -210,9 +221,7 @@ void SchedulerClear(scheduler_ty *scheduler)
 	while (!SchedulerIsEmpty(scheduler))
 	{
 		TaskDestroy(PqueuePeek(scheduler->tasks));
-		printf("TASK DESTROYED\n");
 		PqueueDequeue(scheduler->tasks);
-		printf("TASK DEQEUEUD\n");
 	}
 }
 /******************************************************************************/

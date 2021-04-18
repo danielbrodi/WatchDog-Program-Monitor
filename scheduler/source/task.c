@@ -20,7 +20,7 @@
 /***************************** Struct__Definition *****************************/
 struct task
 {
-	oper_ret_ty func;	/*	the function that will be excuted by the task	  */
+	operation_func_ty func;	/*	the function that will be excuted by the task */
 	size_t interval;	/*	how often should the task run, in seconds		  */	
 	time_t time_to_run;	/*	on what time should the function be first excuted */
 	ilrd_uid_ty uid;	/*	UID which is exclusively created for each task	  */
@@ -51,6 +51,7 @@ task_ty *TaskCreate(operation_func_ty func, size_t interval,
 		return (NULL);
 	}
 	
+	new_task->func = func;
 	new_task->interval = interval;
 	new_task->time_to_run = time_to_run;
 	new_task->param = param;
@@ -72,7 +73,7 @@ oper_ret_ty TaskRun(task_ty *task)
 {
 	assert(task);
 	
-	return (task->func);
+	return (task->func(task->param));
 }
 /******************************************************************************/
 

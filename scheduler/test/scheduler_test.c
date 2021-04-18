@@ -77,28 +77,37 @@ static void SchedulerDestroyTest(scheduler_ty *scheduler)
 static void SchedulerAddTest(scheduler_ty *scheduler)
 {
 	boolean_ty is_working = TRUE;
-	long x = 3;
-	size_t interval = 3;
-	
-	SchedulerAdd(scheduler, PrintHello, interval, (void *)x);
+	size_t counter1 = 0;
+	size_t counter2 = 0;
+	size_t counter3 = 0;
+	printf("ADDING 3 elements: ");
+	SchedulerAdd(scheduler, PrintHello, 1, (void *)&counter1);
+	printf("Count: %lu\n", counter1);
+	SchedulerAdd(scheduler, PrintHello, 2, (void *)&counter2);
+	printf("Count: %lu\n", counter2);
+	SchedulerAdd(scheduler, PrintHello, 3, (void *)&counter3);
 	
 	is_working ? PRINT_SUCCESS : PRINT_FAILURE;
 }
 /******************************************************************************/
 static void SchedulerSizeTest(scheduler_ty *scheduler)
 {
-	printf("SIZE: %ld\n", SchedulerSize(scheduler));
+	printf("SIZE_AFTER_3_ADDS: %lu\n", SchedulerSize(scheduler));
 }
 /******************************************************************************/
 oper_ret_ty PrintHello(void *param)
 {
-	(void)(param);
-	printf("Hello");
+	size_t *i = (size_t *)param;
+	++(*i);
+	printf("Count: %p\n", *i);
+	if (10 == *i)
 	return (DONE);
+	else
+	return (NOT_DONE);
 }
 /******************************************************************************/
 static void SchedulerRunTest(scheduler_ty *scheduler)
 {
-	printf("STATUS: %d", SchedulerRun(scheduler));
+	printf("STATUS RUN (0 is DONE): %d", SchedulerRun(scheduler));
 }
 /******************************************************************************/
