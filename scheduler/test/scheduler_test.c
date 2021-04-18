@@ -144,7 +144,6 @@ static void SchedulerRunTest(scheduler_ty *scheduler)
 
 oper_ret_ty Func1(void *param)
 {
-	boolean_ty is_working = TRUE;
 	input_ty *input = (input_ty *)param;
 	
 	++(input->counter);
@@ -199,7 +198,7 @@ static void RunTests(scheduler_ty *scheduler)
 {
 	static void (*TestFuncs[5]) (scheduler_ty *schedule);
 	
-	size_t i = 0;
+	size_t func_index = 0;
 	
 	TestFuncs[0] = SchedulerCreateTest;
 	TestFuncs[1] = SchedulerSortingTest;
@@ -207,10 +206,10 @@ static void RunTests(scheduler_ty *scheduler)
 	TestFuncs[3] = SchedulerRunTest;
 	TestFuncs[4] = SchedulerDestroyTest;
 	
-	while(i < 5)
+	while(func_index < 5)
 	{
-		(*TestFuncs[i]) (scheduler);
-		++i;
+		(*TestFuncs[func_index]) (scheduler);
+		++func_index;
 	}
 }
 /******************************************************************************/
