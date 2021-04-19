@@ -181,7 +181,7 @@ run_status_ty SchedulerRun(scheduler_ty *scheduler)
 		{
 			return	(FINISHED);
 		}
-		else
+	else
 		{
 			return (STOPPED);
 		}

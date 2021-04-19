@@ -134,7 +134,7 @@ static void SchedulerRunTest(scheduler_ty *scheduler)
 	
 	is_working *= (3 == SchedulerSize(scheduler));
 	
-	printf (ANSI_COLOR_CYAN "\n**Scheduler Start to Run:**\n" ANSI_COLOR_RESET);
+	printf (ANSI_COLOR_CYAN "\n**Scheduler Starts to Run:**\n" ANSI_COLOR_RESET);
 	
 	is_working *= (FINISHED == SchedulerRun(scheduler));
 	
