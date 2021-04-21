@@ -27,8 +27,8 @@
 #define CURRENT_TIME time(0)
 
 /**************************** Forward Declarations ****************************/
-int SortTasks(const void *task1, const void *task2);
-boolean_ty MatchUIDs(const void *task, const void *uid);
+static int SortTasks(const void *task1, const void *task2);
+static boolean_ty MatchUIDs(const void *task, const void *uid);
 
 /***************************** Struct__Definition *****************************/
 struct scheduler
@@ -69,11 +69,8 @@ void SchedulerDestroy(scheduler_ty *scheduler)
 {
 	if (NULL != scheduler)
 	{
-		if (!SchedulerIsEmpty(scheduler))
-		{
-			SchedulerClear(scheduler);
-		}
-			
+		SchedulerClear(scheduler);
+				
 		PqueueDestroy(scheduler->tasks);
 		scheduler->tasks = NULL;
 				
@@ -99,6 +96,8 @@ ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
 	}
 	else
 	{
+		/*	free the memory that was allocated to the task to avoid leaks	*/
+		TaskDestroy(new_task);
 		return (UIDGetBadUID()); /*	failed to create or to add the task	*/
 	}
 }
@@ -220,7 +219,7 @@ void SchedulerClear(scheduler_ty *scheduler)
 /******************************************************************************/
 /*	Returns a positive value if task2 has an
 	earlier expected time to run than task1	*/
-int SortTasks(const void *task1, const void *task2)
+static int SortTasks(const void *task1, const void *task2)
 {
 	time_t expected_time_task1 = TaskGetTimeToRun(VOID_PTR_TO_TASK_PTR(task1));
 	time_t expected_time_task2 = TaskGetTimeToRun(VOID_PTR_TO_TASK_PTR(task2));
@@ -230,7 +229,7 @@ int SortTasks(const void *task1, const void *task2)
 /******************************************************************************/
 /* first paramater is each element's data in the scheduler which means a task.
 	second paramater is an address of a valid uid	*/
-boolean_ty MatchUIDs(const void *task, const void *uid)
+static boolean_ty MatchUIDs(const void *task, const void *uid)
 {
 	ilrd_uid_ty uid_of_task = TaskGetUid(task);
 	ilrd_uid_ty uid_to_find = *(ilrd_uid_ty *)uid;
