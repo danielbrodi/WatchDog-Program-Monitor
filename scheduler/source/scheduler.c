@@ -104,23 +104,20 @@ ilrd_uid_ty SchedulerAdd(scheduler_ty *scheduler,
 /******************************************************************************/
 status_ty SchedulerRemove(scheduler_ty *scheduler, ilrd_uid_ty uid)
 {
+	void *task_to_remove = NULL;
 	ilrd_uid_ty uid_to_remove = uid;
 	
 	assert(scheduler);
 	assert(!SchedulerIsEmpty(scheduler));
 	
-	if (!UIDIsEqual(UIDGetBadUID(), uid))	/* is the received UID valid?	*/ 
-	{
-		void *task_to_remove = PqueueErase(scheduler->tasks,
-													MatchUIDs, &uid_to_remove);
+	task_to_remove = PqueueErase(scheduler->tasks, MatchUIDs, &uid_to_remove);
 
-		if(NULL != task_to_remove) /* task has been found in the scheduler	*/
-		{		
-			TaskDestroy(task_to_remove);
-			return (SUCCESS);	/* the task was successfully removed	*/
-		}
+	if (NULL != task_to_remove) /* task has been found in the scheduler	*/
+	{		
+		TaskDestroy(task_to_remove);
+		return (SUCCESS);		/* the task was successfully removed	*/
 	}
-	
+
 	return (FAILURE);
 }
 /******************************************************************************/
@@ -213,7 +210,7 @@ void SchedulerClear(scheduler_ty *scheduler)
 	
 	while (!SchedulerIsEmpty(scheduler))
 	{
-		TaskDestroy(PqueueDequeue(scheduler->tasks));
+		TaskDestroy((task_ty *)PqueueDequeue(scheduler->tasks));
 	}
 }
 /******************************************************************************/
