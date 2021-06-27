@@ -7,6 +7,8 @@
 #ifndef	__UTILS_H__
 #define	__UTILS_H__
 
+
+#define UNUSED(x) ((void)(x))
 /* escape keys for printf to color output for stodout */
 #define NORMAL	"\x1B[0m"
 #define BLACK   "\x1B[30m"
