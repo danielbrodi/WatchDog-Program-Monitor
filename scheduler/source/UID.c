@@ -1,13 +1,14 @@
 /*********************************FILE__HEADER*********************************\
 * File: UID.c					 		  								
 * Author: Daniel Brodsky				  								
-* Date: 08/04/2021							   								
-* Version: 1.0 (Before Review)			   								
-* Reviewer: Omer						   								
-* Description: Unique identifier Functions Implementations.			 
+* Date: 08/04/2021	// added thread safe on 30/06/2021						   								
+* Version: 1.0								
+* Reviewed by Omer Gamerman.						   								
+* Description: Unique identifier Implementation.			 
 \******************************************************************************/
 
 /********************************* Inclusions *********************************/
+
 #include <stddef.h>		/* size_t		*/
 #include <unistd.h>		/* pid_t		*/
 #include <time.h>		/* time_t		*/
@@ -16,7 +17,9 @@
 #include "UID.h"
 
 /***************************** Static Definitions *****************************/
+
 ilrd_uid_ty UIDGetBadUID(void);
+
 size_t shared_counter = 0;	/* a shared counter for all new created uid's	*/
 
 /******************************************************************************/
@@ -32,7 +35,8 @@ ilrd_uid_ty UIDCreate(void)
 		return (UIDGetBadUID());
 	}
 	
-	++shared_counter;
+	/*	thread safe	*/
+	__sync_fetch_and_add(&shared_counter, 1);
 	
 	new_uid.PID = getpid();
 	new_uid.timestamp = curr_time;
