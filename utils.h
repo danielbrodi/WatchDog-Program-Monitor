@@ -7,7 +7,6 @@
 #ifndef	__UTILS_H__
 #define	__UTILS_H__
 
-
 #define UNUSED(x) ((void)(x))
 /* escape keys for printf to color output for stodout */
 #define NORMAL	"\x1B[0m"
@@ -23,5 +22,15 @@
 /* print colored output of SUCCESS and FAILURE */
 #define PRINT_SUCCESS printf (GREEN "SUCCESS\n" NORMAL)
 #define PRINT_FAILURE printf (RED "FAILURE\n" NORMAL)
+
+/*  exits the program with the given 'ret status' if 'is_bad' is true     */
+void ExitIfError(int is_bad, char *msg_to_print, int ret_stat)
+{
+	if (is_bad)
+	{
+		puts(msg_to_print);
+		exit(ret_stat);
+	}
+}
 
 #endif	/* __UTILS_H__ */
