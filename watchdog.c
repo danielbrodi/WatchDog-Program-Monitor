@@ -22,7 +22,7 @@
 	/*	asserts */
 	/*	create a new thread and send it KeepMeAliveIMP function with
 	 *	struct info with all the needed info */
-	/*	joins the thread */
+	/*upgrade niceness*/
 /*	KeepMeAlive - function - end */
 
 /*	KeepMeAliveIMP	function - start */
@@ -31,22 +31,27 @@
 	/*	mask signals	*/
 	/*	save the parameters info in local variables */
 	
-	/*	fork: 	*/
-		
-		/*	if child: */
-			/*	execv	*/
-		/*	end if 		*/
+	/*	while program is running */
+		/*	RESET: fork: 	*/
 			
-		/*	if parent:	*/
-			/*	while time from last check is fine: */
-				/*	while watchdog doesn't respond && not pass num_allowed_fails : 
-							/*	try again */
-							/*	sleep for num_seconds_between_checks	*/
-				/*	end while doesn't respond */
+			/*	if child: */
+				/*	execv	*/
+				/*	pass cli parmeters */
+				/*	exit if execv fails */
+			/*	end if 		*/
 				
-				/*	wait for signal */
+			/*	if parent:	*/
+				/*	register signal handler that will reset the time */
 				
-			/*	end while program runs */
+				/*	while total time has not passed :*/
+				
+					/*	send signal every num_seconds_between_checks	*/
+				/*	end of while */
+				
+				/*	terminate child process (watchdog) */
+	/*	end of while program is runnig */
+			
+			
 		/*	end if */
 	/*	
 	
