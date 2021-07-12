@@ -30,39 +30,54 @@
 /*----------------------------------------------------------------------------*/
 	
 /*	KeepMeAlive function - start */
+
 	/*	asserts */
+	
+	/*	upgrade niceness by one	*/
+	
 	/*	create a new thread and send it KeepMeAliveIMP function with
 	 *	struct info with all the needed info */
-	/*	upgrade niceness	*/
+	
 /*	KeepMeAlive - function - end */
 
 /*----------------------------------------------------------------------------*/
 
 /*	KeepMeAliveIMP	function - start */
+
 	/*	asserts */
+	
 	/*	set signal handlers */
+	
 	/*	mask signals	*/
+	
 	/*	save the parameters info in local variables */
 	
 	/*	while program is running */
+	
 		/*	fork: 	*/
-			
+			/*---------------------------------*/
 			/*	if child: */
-				/*	execv	*/
-				/*	pass cli parmeters */
-				/*	exit if execv fails */
+			
+				/*	execv WATCHDOG - EXTERNAL PROGRAM	-*/
+				
+				/*	handle error if execv fails.. maybe exit? */
+				
 			/*	end child 		*/
-				
+			/*---------------------------------*/
 			/*	if parent:	*/
-				/*	register signal handler that will reset the time */
+			
+				/*	while program runs */
+					/*	run the exact code of `WATCHDOG - EXTERNAL PROGRAM`
+					 *	just with a different signal handler and instead 
+					 *	of sending signals to PPID , send to PID, and instead
+					 *	of killing PID process, kill PPID and restart it if
+					 *	needed */
+				/*	end while of program runs */
 				
-				/*	while maximum time has not passed :*/
-					/*	send signal every num_seconds_between_checks using scheduler	*/
-				/*	end of while */
-				
-				/*	terminate child process (watchdog) */
 			/*	end parent */
-	/*	end of while program is runnig */
+			/*---------------------------------*/
+	/*	end of while program is runnig  - maybe not needed? its for restart */
+	
 /*	KeepMeAliveIMP function - end	*/
 
 /*----------------------------------------------------------------------------*/
@@ -72,13 +87,13 @@
 
 /*	create a variable that tracks the number of missed signals */
 
-/*	register signal handler that will reset the time that has been passed since the last signal that was send */
+/*	register signal handler that will reset the number of missed signals counter */
 
 /*	while program runs */
 
 	/*	while number_missed_signals < num_allowed_fails */
 
-		/*	send signal each num_seconds_between_checks using a scheduler */
+		/*	send signal to parent PID each num_seconds_between_checks using a scheduler */
 		
 		/*	while sleep(num_seconds_between_checks + 30 seconds) */
 				
@@ -92,6 +107,8 @@
 		
 	/*	end of while number_missed_signals - which means reached maximum fails that allowed */
 	
+	/*	terminate user's process */
+	
 	/*	restart user's program using argc argv parameters that were received through execv */
 	
 	/*	restart number_missed_signals counter */
@@ -100,3 +117,15 @@
 
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
+
+/*	signal handler function - start 	*/
+	/*	set number_missed_signals as 0 */
+/*	signal handler function - end	*/
+
+/*----------------------------------------------------------------------------*/
+
+/*	DNR function - start */
+	/*	set DNR flag as 1 */
+/*	DNR function - end */
+/*----------------------------------------------------------------------------*/
+
