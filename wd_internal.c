@@ -169,27 +169,45 @@ oper_ret_ty CheckIfSignalReceived(void *info)
 /******************************************************************************/
 void KillnRestartProcess(pid_t process_to_kill, char *argv[])
 {
-	/*	terminate process_to_kill	*/
+	pid_t pid = 0;
 	
-	/*	verify its terminated	*/
+	assert(process_to_kill);
+	
+	/*	terminate process_to_kill	*/
+	kill(process_to_kill, SIGTERM);
+	
+	/*	TODO verify its terminated	*/
 	
 	/*	fork: 	*/
-		
+	pid = fork();
+	
+	/*	handle fork errors */
+	ExitIfError(pid < 0, "Failed to restart application!\n", -1);
+	
 	/*---------------------------------*/
 	/*	if child: */
-		
+	if (0 == pid)
+	{
 		/*	execv WATCHDOG PROGRAM with argv	-*/
-		
+		execvp("./watchdog", argv + 1);
+			
 		/*	return (-1) if any errors */
+		return (-1);
 		
 	/*	end child 		*/
+	}
 	/*---------------------------------*/
 	
 	/*	if parent:	*/
-	
-		/*	update process_to_watch */
+	else
+	{
+		/*	update process_to_watch TODO make it a ptr? maybe a struct including process & argv? */
+		process_to_watch = pid;
+		
+		return;
 		
 	/*	end parent */
+	}
 	/*---------------------------------*/
 }
 /******************************************************************************/
