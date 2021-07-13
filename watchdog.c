@@ -36,21 +36,27 @@
 
 /******************************************************************************/	
 /*	KeepMeAlive function - start */
-void KeepMeAlive(int argc, char *argv[], size_t num_seconds_between_checks,
+int KeepMeAlive(int argc, char *argv[], size_t num_seconds_between_checks,
 													size_t num_allowed_fails)
 {
 	/*	asserts */
 	
-	/*	upgrade niceness by one	*/
+	/*	register SIGUSR1 signal handler that increment the flag */
 	
-	/*	check if there is already a watch dog , and if yes - connect it */
-	
-	/*	create a new thread that run WatchDogCreate */
+	/*	check if there is already a watch dog (by an env variable): */
+		/*	if yes - check its pid */
+		/*	if no - WDPCreate, get its pid */
+		
+	/*	create thread (with niceness + 1) with WDManageScheduler and connect it to the pid of the watch dog */
+	/*	handle errors*/
+		
+	/*	return success */
 	
 /*	KeepMeAlive - function - end */
 }
 /******************************************************************************/
 /*	DNR function - start */
 	/*	set DNR flag as 1 */
+	/*	busy wait and verify the watch dog is indeed terminated	*/
 /*	DNR function - end */
 /******************************************************************************/

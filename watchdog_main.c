@@ -24,12 +24,20 @@
 /*	start main function */
 int main(int argc, char *arv[])
 {
-	/*	set signal handlers to deal with SIGUSR1 and SIGUSR2 */
-	/*	create watchdog for received pid from the env varaible */
+	/*	set signal handlers to deal SIGUSR1 &  SIGUSR2 */
+
+	/*	add itself to env variable to indicate there is a running watch dog */
+	
+	/* WDManageScheduler for parent id */
+	
+	
+	/*	return */
 	
 /*	end main function */
 }
 
 /******************************************************************************/
-
-
+/*	SIGUSR2 handler - start*/
+	/*	set DNR flag as 1 */
+/*	SIGUSR2 handler - end */
+/******************************************************************************/
