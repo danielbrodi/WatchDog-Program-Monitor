@@ -16,7 +16,7 @@
 
 #include <unistd.h>		/*	nice */
 
-#include <sys/time.h>	/*	getpriority	*/
+#include <sys/time.h>		/*	getpriority	*/
 #include <sys/resource.h>	/*	getpriority	*/
 
 #include "scheduler.h"
@@ -24,7 +24,14 @@
 
 /***************************** Global Definitions *****************************/
 
+/*	determines if the scheduler should stop, which means the WD should stop */
+static int g_scheduler_should_stop = 0;
 
+/*	indicates if right signal from the watched app was received by the WD */
+static int g_is_signal_received = 0;
+
+/*	counts amount of times that the WD did not receive a signal from the app */
+static int g_counter_missed_signals = 0;
 
 /************************* Functions  Implementations *************************/
 /*	WDPCreate	function - start */
@@ -66,17 +73,18 @@ pid_t WDPCreate(int argc, char *argv[])
 			/*	if parent:	*/
 			else
 			{
-				/*	do nothing */
-				return;
+				/*	return child's pid */
+				return (pid);
 				
 			/*	end parent */
 			}
 			/*---------------------------------*/
-	
-/*	KeepMeAliveIMP function - end	*/
+			
+	return (-1);
 }
 /******************************************************************************/
 /*	manages WD scheduler - sends and checks for signals */
+/* TODO handle errors for each function in this part */
 void *WDManageScheduler(void *info)
 {	
 	scheduler_ty *wd_scheduler = NULL;
@@ -105,26 +113,43 @@ void *WDManageScheduler(void *info)
 	return (NULL);
 }
 /******************************************************************************/
-/*	signal handler function - start 	*/
 void SigHandlerIMP(int sig_id)
 {
 	/*	increment global flag of received or not signal */
+	++g_is_signal_received;
 	
-/*	signal handler function - end	*/	
+	return;
 }
 /******************************************************************************/
-oper_ret_ty SendSignal(void *process_to_signal)
+oper_ret_ty SendSignalIMP(void *process_to_signal)
 {
-	/*	send SIGUSR1 to process_to_watch every X seconds */
+	pid_t pid = 0;
+	
+	assert(process_to_signal);
+	
+	pid = *(pid_t *)process_to_signal;
+	
+	/*	send SIGUSR1 to process_to_signal and handle errors if any */
+	if (kill(pid, SIGUSR1))
+	{
+		return (OPER_FAILURE);
+	}
+	
+	return (DONE);
 }
 /******************************************************************************/
 oper_ret_ty CheckIfSignalReceived(void *info)
 {
 	/*	create a counter of num of missed signals */
+	size_t num_missed = 0;
 
 	/*	check if the "received signal" flag is toggled */
-		/*	if yes : decrement it and do nothing, continue.
-			if not:  increment num_missed_signals counter 	*/
+	if (g_is_signal_received)
+	{
+		/*	if yes : decrement it and do nothing, continue. */
+			--g_is_signal_received;
+	}
+		/*	if not:  increment num_missed_signals counter 	*/
 			
 	/*	if num_missed_signals equals num_allowed_fails : */
 
