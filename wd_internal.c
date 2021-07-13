@@ -21,7 +21,6 @@
 
 #include "scheduler.h"
 
-
 /***************************** Global Definitions *****************************/
 
 /*	determines if the scheduler should stop, which means the WD should stop */
@@ -46,6 +45,7 @@ pid_t WDPCreate(int argc, char *argv[])
 	s
 	/*	fork: 	*/
 	pid = fork();
+	
 	/*	check if process was successfully created and return error otherwise */
 	if (pid < 0)
 	{
@@ -140,26 +140,31 @@ oper_ret_ty SendSignalIMP(void *process_to_signal)
 /******************************************************************************/
 oper_ret_ty CheckIfSignalReceived(void *info)
 {
-	/*	create a counter of num of missed signals */
-	size_t num_missed = 0;
-
 	/*	check if the "received signal" flag is toggled */
 	if (g_is_signal_received)
 	{
 		/*	if yes : decrement it and do nothing, continue. */
 			--g_is_signal_received;
 	}
-		/*	if not:  increment num_missed_signals counter 	*/
-			
-	/*	if num_missed_signals equals num_allowed_fails : */
-
-		/*	terminate process_to_watch process */
-
-		/*	restart process_to_watch using argc argv parameters  */
-
-		/*	reset number_missed_signals counter */
+	/*	if signal was not received:  increment num_missed_signals counter 	*/
+	else
+	{
+		++num_missed_signals;
+	}
 	
+	/*	if num_missed_signals equals num_allowed_fails : */
+	if (num_missed_signals == info.num_allowed_fails)
+	{
+		/*	terminate process_to_watch process */
+		/*	restart process_to_watch using argc argv parameters  */
+		KillnRestartProcess(info.process_to_watch, /*TODO*/);
+			
+		/*	reset number_missed_signals counter */
+		num_missed_signals = 0;
+	}
+		
 	/*	end if reached num_allowed_fails */
+	return (DONE);
 }
 /******************************************************************************/
 void KillnRestartProcess(pid_t process_to_kill, char *argv[])
