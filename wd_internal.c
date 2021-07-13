@@ -19,6 +19,8 @@
 #include <sys/time.h>	/*	getpriority	*/
 #include <sys/resource.h>	/*	getpriority	*/
 
+#include "scheduler.h"
+
 
 /***************************** Global Definitions *****************************/
 
@@ -64,7 +66,8 @@ pid_t WDPCreate(int argc, char *argv[])
 			/*	if parent:	*/
 			else
 			{
-				/*	return */
+				/*	do nothing */
+				return;
 				
 			/*	end parent */
 			}
@@ -73,20 +76,33 @@ pid_t WDPCreate(int argc, char *argv[])
 /*	KeepMeAliveIMP function - end	*/
 }
 /******************************************************************************/
-/*	manages WD scheduler - sends and checks for signals /
+/*	manages WD scheduler - sends and checks for signals */
 void *WDManageScheduler(void *info)
-{
+{	
+	scheduler_ty *wd_scheduler = NULL;
+
+	/*	asserts	*/
+	assert(info);
+	
 	/*	create scheduler	*/
+	wd_scheduler = SchedulerCreate();
+	ExitIfError(!wd_scheduler, "Failed to create a WatchDog Scheduler!\n", -1);
 	
 	/*	create a scheduler task SendSignal */
+	SchedulerAdd(wd_scheduler, SendSignal, info.signal_intervals, 
+														info.process_to_watch);
 	
 	/*	create a scheduler task CheckIfSignalReceived */
-
+	SchedulerAdd(wd_scheduler, CheckIfSignalReceived, info.signal_intervals + 5, 
+																		info);
 	/*	scheduler run */
+	SchedulerRun(wd_scheduler);
 	
 	/*	scheduler destroy */
+	SchedulerDestroy(wd_scheduler);
 	
 	/*	return */
+	return (NULL);
 }
 /******************************************************************************/
 /*	signal handler function - start 	*/
@@ -97,12 +113,12 @@ void SigHandlerIMP(int sig_id)
 /*	signal handler function - end	*/	
 }
 /******************************************************************************/
-operation_func_ty SendSignal
+oper_ret_ty SendSignal(void *process_to_signal)
 {
 	/*	send SIGUSR1 to process_to_watch every X seconds */
 }
 /******************************************************************************/
-operation_func_ty CheckIfSignalReceived
+oper_ret_ty CheckIfSignalReceived(void *info)
 {
 	/*	create a counter of num of missed signals */
 
