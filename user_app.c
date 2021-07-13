@@ -1,10 +1,11 @@
 /*********************************FILE__HEADER*********************************\
-* File:				user_app.c
-* Author:			Daniel Brodsky				 		  												  								
-* Date:				12-July-2021
+* File:					watchdog.c
+* Author:				Daniel Brodsky				 		  												  								
+* Date:					12-July-2021
+* Pseudocode Reviewer:	Eran Barnoy
 * Code Reviewer:						   								
-* Version:			1.0		
-* Description:		Sample of a user app that runs a Watch Dog program.
+* Version:				1.0			
+* Description:			Sample of a user app that runs a Watch Dog program.
 \******************************************************************************/
 
 #include <stdio.h>	/*	printf */

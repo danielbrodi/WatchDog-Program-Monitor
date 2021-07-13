@@ -1,14 +1,16 @@
 /*********************************FILE__HEADER*********************************\
-* File:				watchdog.c
-* Author:			Daniel Brodsky				 		  												  								
-* Date:				11-July-2021
+* File:					watchdog.c
+* Author:				Daniel Brodsky				 		  												  								
+* Date:					11-July-2021
+* Pseudocode Reviewer:	Eran Barnoy
 * Code Reviewer:						   								
-* Version:			1.0		
-* Description:		Watchdog's program design pseudo-code. 
-					Watchdog should protect a client's program from being
-					terminated and restart it if needed. 
-					The client's program should also protect the watchdog
-					program from being terminated and also restart it if needed.
+* Version:				1.0		
+* Description:			Watchdog's program design pseudo-code. 
+						Watchdog should protect a client's program from being
+						terminated and restart it if needed. 
+						The client's program should also protect the watchdog
+						program from being terminated and also
+						restart it if needed.
 \******************************************************************************/
 
 /******************************** Header Files ********************************/

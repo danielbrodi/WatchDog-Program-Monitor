@@ -1,10 +1,11 @@
 /*********************************FILE__HEADER*********************************\
-* File:				watchdog_main.c
-* Author:			Daniel Brodsky				 		  												  								
-* Date:				12-July-2021
+* File:					watchdog.c
+* Author:				Daniel Brodsky				 		  												  								
+* Date:					12-July-2021
+* Pseudocode Reviewer:	Eran Barnoy
 * Code Reviewer:						   								
-* Version:			1.0		
-* Description:		Main function of the Watch Dog program.
+* Version:				1.0		
+* Description:			Main function of the Watch Dog program.
 \******************************************************************************/
 
 /******************************** Header Files ********************************/

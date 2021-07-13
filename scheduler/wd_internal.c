@@ -1,10 +1,11 @@
 /*********************************FILE__HEADER*********************************\
-* File:				watchdog.c
-* Author:			Daniel Brodsky				 		  												  								
-* Date:				12-July-2021
+* File:					watchdog.c
+* Author:				Daniel Brodsky				 		  												  								
+* Date:					12-July-2021
+* Pseudocode Reviewer:	Eran Barnoy
 * Code Reviewer:						   								
-* Version:			1.0		
-* Description:		Watchdog's program internal functions.
+* Version:				1.0		
+* Description:			Watchdog's program internal functions.
 \******************************************************************************/
 
 /******************************************************************************/
@@ -33,7 +34,7 @@ int WDPCreate(int argc, char *argv[])
 				/*	return */
 				
 			/*	end parent */
-			/*---------------------------------*/s
+			/*---------------------------------*/
 	
 /*	KeepMeAliveIMP function - end	*/
 }
@@ -43,10 +44,9 @@ void *WDManageScheduler(void *process_to_watch)
 {
 	/*	create scheduler	*/
 	
-	/*	create a scheduler task that will signal a given process every X seconds - TASK1 */
+	/*	create a scheduler task SendSignal */
 	
-	/*	create a scheduler task that will receive the address of the flag, and
-	 *	check whether its toggled or not - TASK2 */
+	/*	create a scheduler task CheckIfSignalReceived */
 
 	/*	scheduler run */
 	
@@ -63,13 +63,13 @@ void SigHandlerIMP(int sig_id)
 /*	signal handler function - end	*/	
 }
 /******************************************************************************/
-					/*	TASK 1 */
-
-	/*	send SIGUSR1 to process_to_watch */
-
+operation_func_ty SendSignal
+{
+	/*	send SIGUSR1 to process_to_watch every X seconds */
+}
 /******************************************************************************/
-					/*	TASK 2 */
-
+operation_func_ty CheckIfSignalReceived
+{
 	/*	create a counter of num of missed signals */
 
 	/*	check if the "received signal" flag is toggled */
@@ -85,4 +85,33 @@ void SigHandlerIMP(int sig_id)
 		/*	reset number_missed_signals counter */
 	
 	/*	end if reached num_allowed_fails */
+}
+/******************************************************************************/
+void KillnRestartProcess(pid_t process_to_kill, char *argv[])
+{
+	/*	terminate process_to_kill	*/
+	
+	/*	verify its terminated	*/
+	
+	/*	fork: 	*/
+		
+	/*---------------------------------*/
+	/*	if child: */
+		
+		/*	change niceness + 1 */
+		
+		/*	execv WATCHDOG PROGRAM with argv	-*/
+		
+		/*	return (-1) if any errors */
+		
+	/*	end child 		*/
+	/*---------------------------------*/
+	
+	/*	if parent:	*/
+	
+		/*	return */
+		
+	/*	end parent */
+	/*---------------------------------*/
+}
 /******************************************************************************/
