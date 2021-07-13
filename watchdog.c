@@ -67,7 +67,12 @@ int KeepMeAlive(int argc, char *argv[], size_t num_seconds_between_checks,
 }
 /******************************************************************************/
 /*	DNR function - start */
+void DNR(void)
+{
 	/*	set DNR flag as 1 */
+	g_scheduler_should_stop = 1;
+	
 	/*	busy wait and verify the watch dog is indeed terminated	*/
+	waitpid()....
 /*	DNR function - end */
 /******************************************************************************/

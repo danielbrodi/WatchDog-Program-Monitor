@@ -113,14 +113,6 @@ void *WDManageScheduler(void *info)
 	return (NULL);
 }
 /******************************************************************************/
-void SigHandlerIMP(int sig_id)
-{
-	/*	increment global flag of received or not signal */
-	++g_is_signal_received;
-	
-	return;
-}
-/******************************************************************************/
 oper_ret_ty SendSignalIMP(void *process_to_signal)
 {
 	pid_t pid = 0;
@@ -229,5 +221,21 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 	/*	handle errors if any	*/
 	ExitIfBad(sigaction(signal, &signal_action, NULL) < 0, 
 				"Error: Could not set register a sigaction handler\n", 1);
+}
+/******************************************************************************/
+void handler_siguser1(int sig_id)
+{
+	/*	increment global flag of received or not signal */
+	++g_is_signal_received;
+	
+	return;
+}
+/******************************************************************************/
+void handler_siguser2(int sig_id)
+{
+	/*	set DNR flag as 1 */
+	g_scheduler_should_stop = 1;
+	
+	return;
 }
 /******************************************************************************/
