@@ -14,11 +14,6 @@
 
 #include <signal.h>		/*	signals functions				*/
 
-#include <unistd.h>		/*	nice */
-
-#include <sys/time.h>		/*	getpriority	*/
-#include <sys/resource.h>	/*	getpriority	*/
-
 #include "scheduler.h"
 
 /***************************** Global Definitions *****************************/
@@ -56,12 +51,7 @@ pid_t WDPCreate(char *argv[])
 			/*---------------------------------*/
 			/*	if child: */
 			if (0 == pid)
-			{
-				/*	upgrade niceness by on 1	*/
-				curr_priority = getpriority(PRIO_PROCESS,getpid());
-				
-				nice(curr_priority + 1);
-				
+			{	
 				/*	execv WATCHDOG PROGRAM with CLI parameters	-*/
 				execvp("./watchdog", argv + 1);
 				
@@ -99,8 +89,8 @@ void *WDManageScheduler(void *info)
 	ExitIfError(!wd_scheduler, "Failed to create a WatchDog Scheduler!\n", -1);
 	
 	/*	create a scheduler task SendSignal */
-	SchedulerAdd(wd_scheduler, SendSignal, info.signal_intervals, 
-														info.process_to_watch);
+	SchedulerAdd(wd_scheduler, SendSignalIMP, info.signal_intervals, 
+														g_process_to_signal);
 	
 	/*	create a scheduler task CheckIfSignalReceived */
 	SchedulerAdd(wd_scheduler, CheckIfSignalReceived, info.signal_intervals + 5, 
@@ -151,7 +141,7 @@ oper_ret_ty CheckIfSignalReceived(void *info)
 	{
 		/*	terminate process_to_watch process */
 		/*	restart process_to_watch using argc argv parameters  */
-		KillnRestartProcess(g_process_to_signal);
+		KillnRestartProcess();
 			
 		/*	reset number_missed_signals counter */
 		num_missed_signals = 0;
@@ -161,16 +151,15 @@ oper_ret_ty CheckIfSignalReceived(void *info)
 	return (DONE);
 }
 /******************************************************************************/
-void KillnRestartProcess(pid_t process_to_kill, char *argv[])
+void KillnRestartProcess(char *argv[])
 {
-	pid_t pid = 0;
-	
-	assert(process_to_kill);
-	
+	process_to_kill = g_process_to_signal;
+		
 	/*	terminate process_to_kill	*/
 	kill(process_to_kill, SIGTERM);
 	
-	/*	TODO verify its terminated	*/
+	/*	verify its terminated	*/
+	while (0 != kill(process_to_kill, 0)){};
 	
 	/*	fork: 	*/
 	pid = fork();
@@ -195,8 +184,7 @@ void KillnRestartProcess(pid_t process_to_kill, char *argv[])
 	/*	if parent:	*/
 	else
 	{
-		/*	update process_to_watch TODO make it a ptr? maybe a struct including process & argv? */
-		process_to_watch = pid;
+		g_process_to_signal = pid;
 		
 		return;
 		
@@ -228,7 +216,7 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 void handler_siguser1(int sig_id)
 {
 	/*	increment global flag of received or not signal */
-	++g_is_signal_received;
+	__sync_fetch_and_add(&g_is_signal_received, 1);
 	
 	return;
 }
@@ -236,7 +224,7 @@ void handler_siguser1(int sig_id)
 void handler_siguser2(int sig_id)
 {
 	/*	set DNR flag as 1 */
-	g_scheduler_should_stop = 1;
+	__sync_fetch_and_add(&g_scheduler_should_stop, 1);
 	
 	return;
 }

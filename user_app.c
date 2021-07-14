@@ -23,6 +23,7 @@ int main(int argc, char *arv[])
 	while (num < 1000)
 	{
 		printf("Your lucky number is: %d\n", num);
+		sleep(1);
 		++num;
 	}
 	

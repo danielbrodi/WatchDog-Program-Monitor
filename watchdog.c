@@ -36,8 +36,7 @@ typedef struct info
 
 /************************* Functions  Implementations *************************/	
 
-int KeepMeAlive(int argc, char *argv[], time_t signal_intervals,
-													size_t num_allowed_misses)
+int KeepMeAlive(int argc, char *argv[])
 {
 	info_ty wd_info = {0};
 	
@@ -45,6 +44,10 @@ int KeepMeAlive(int argc, char *argv[], time_t signal_intervals,
 	
 	pthread_t wd_thread = 0;
 	
+	/*	stores values of num_allowed_misses and signal_intervals as env vars */
+	char env_num_allowed_misses[8];
+	char env_signal_intervals[8];
+		
 	/*	asserts */
 	assert(signal_intervals);
 	assert(num_allowed_misses);
@@ -61,8 +64,12 @@ int KeepMeAlive(int argc, char *argv[], time_t signal_intervals,
 	
 	ExitIfError(wd_pid < 0, "Failed to create watch dog process!\n", -1);
 	
-	/*	TODO set ENV variables to include num_allowed_misses and 
-	 *	signal_intervals */
+	/*	set ENV variables of num_allowed_misses and signal_intervals */
+	snprintf(env_signal_intervals, sizeof(size_t), "%ld", signal_intervals);
+	putenv(env_signal_intervals);
+	
+	snprintf(env_num_allowed_misses, sizeof(size_t), "%ld", num_allowed_misses);
+	putenv(env_num_allowed_misses);
 	
 	/*	set info struct to be transfered to the scheduler function with all
 	 *	the needede information	*/
@@ -71,7 +78,7 @@ int KeepMeAlive(int argc, char *argv[], time_t signal_intervals,
 	wd_info.num_allowed_misses = num_allowed_misses;
 	wd_info.signal_intervals = signal_intervals;
 	
-	/*	create a thread (with niceness + 1) that will be using a scheduler
+	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */
 	 /*	handle errors*/
 	ExitIfBad(pthread_create(&wd_thread, NULL, WDManageScheduler, info),
@@ -84,10 +91,12 @@ int KeepMeAlive(int argc, char *argv[], time_t signal_intervals,
 void DNR(void)
 {
 	/*	set DNR flag as 1 */
-	g_scheduler_should_stop = 1;
+	__sync_fetch_and_add(&g_scheduler_should_stop, 1);
 	
 	/*	busy wait and verify the watch dog is indeed terminated	*/
-	waitpid()....
+	while (0 != kill(g_process_to_signal, 0)){};
+	
+	return;
 	
 /*	DNR function - end */
 }
