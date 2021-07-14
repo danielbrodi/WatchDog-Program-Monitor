@@ -22,7 +22,6 @@
 
 #include "utils.h"		/*	ExitIfError, UNUSED	*/
 
-
 /***************************** Global Definitions *****************************/
 
 /*	a struct that will be transferred from KeepMeAlive to KeepMeAliveIMP with
@@ -40,6 +39,9 @@ typedef struct info
 int KeepMeAlive(int argc, char *argv[], size_t num_seconds_between_checks,
 													size_t num_allowed_fails)
 {
+
+	info_ty wd_info = {0};
+	
 	pid_t wd_pid = 0;
 	
 	pthread_t wd_thread = 0;
@@ -48,19 +50,29 @@ int KeepMeAlive(int argc, char *argv[], size_t num_seconds_between_checks,
 	assert(num_seconds_between_checks);
 	assert(num_allowed_fails);
 	
-	/*	register SIGUSR1 signal handler that increment the flag */
+	/*	register SIGUSR1 signal handler to manage received signals status */
 	SetSignalHandler(SIGUSR1, handle_siguser1);
+	/*	register SIGUSR2 signal handler request of DNR */	
+	SetSignalHandler(SIGUSR2, handle_siguser2);
 	
 	/*	check if there is already a watch dog (by an env variable): */
 		/*	if yes - check its pid */
-		/*	if no - WDPCreate, get its pid */
-	wd_pid = /*TODO*/ if watch dot exits ? get pid : WDPCreate();
+		/*	if no - create a new process and run WD and get its pid */
+	wd_pid = getenv("WD_STATUS") ? getppid() : WDPCreate();
+	
 	ExitIfError(wd_pid < 0, "Failed to create watch dog process!\n", -1);
 		
+	/*	set info struct to be transfered to the scheduler function with all
+	 *	the needede information	*/
+	wd_info.argc = argc;
+	wd_info.argv = argv;
+	wd_info.num_allowed_fails = num_allowed_fails;
+	wd_info.num_seconds_between_checks = num_seconds_between_checks;
+	
 	/*	create a thread (with niceness + 1) that will be using a scheduler
 	 *	to communicate with the Watch Dog process */
 	 /*	handle errors*/
-	ExitIfBad(pthread_create(&wd_thread, NULL, WDManageScheduler, &wd_pid),
+	ExitIfBad(pthread_create(&wd_thread, NULL, WDManageScheduler, info),
 										"Failed to create a WD thread\n", -1;);
 	/*	return success */
 	return (0);
@@ -74,5 +86,7 @@ void DNR(void)
 	
 	/*	busy wait and verify the watch dog is indeed terminated	*/
 	waitpid()....
+	
 /*	DNR function - end */
+}
 /******************************************************************************/

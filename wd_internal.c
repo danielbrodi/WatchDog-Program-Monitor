@@ -42,7 +42,7 @@ pid_t WDPCreate(int argc, char *argv[])
 	int curr_priority = 0;
 	
 	/*	asserts */
-	s
+	
 	/*	fork: 	*/
 	pid = fork();
 	
