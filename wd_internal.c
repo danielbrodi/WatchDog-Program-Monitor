@@ -32,16 +32,18 @@ static int g_is_signal_received = 0;
 /*	counts amount of times that the WD did not receive a signal from the app */
 static int g_counter_missed_signals = 0;
 
+static pid_t g_process_to_signal = 0;
+
 /************************* Functions  Implementations *************************/
 /*	WDPCreate	function - start */
-/*	returns PID or (-1) if failure */
-pid_t WDPCreate(int argc, char *argv[])
+pid_t WDPCreate(char *argv[])
 {
 	pid_t pid = 0;
 	
 	int curr_priority = 0;
 	
 	/*	asserts */
+	assert(argv);
 	
 	/*	fork: 	*/
 	pid = fork();
@@ -149,7 +151,7 @@ oper_ret_ty CheckIfSignalReceived(void *info)
 	{
 		/*	terminate process_to_watch process */
 		/*	restart process_to_watch using argc argv parameters  */
-		KillnRestartProcess(info.process_to_watch, /*TODO*/);
+		KillnRestartProcess(g_process_to_signal);
 			
 		/*	reset number_missed_signals counter */
 		num_missed_signals = 0;

@@ -30,16 +30,15 @@ typedef struct info
 {
 	int argc;
 	char *argv[];
-	size_t num_allowed_fails;
-	size_t num_seconds_between_checks;	
+	size_t num_allowed_misses;
+	time_t signal_intervals;	
 }info_ty;
 
 /************************* Functions  Implementations *************************/	
 
-int KeepMeAlive(int argc, char *argv[], size_t num_seconds_between_checks,
-													size_t num_allowed_fails)
+int KeepMeAlive(int argc, char *argv[], time_t signal_intervals,
+													size_t num_allowed_misses)
 {
-
 	info_ty wd_info = {0};
 	
 	pid_t wd_pid = 0;
@@ -47,8 +46,8 @@ int KeepMeAlive(int argc, char *argv[], size_t num_seconds_between_checks,
 	pthread_t wd_thread = 0;
 	
 	/*	asserts */
-	assert(num_seconds_between_checks);
-	assert(num_allowed_fails);
+	assert(signal_intervals);
+	assert(num_allowed_misses);
 	
 	/*	register SIGUSR1 signal handler to manage received signals status */
 	SetSignalHandler(SIGUSR1, handle_siguser1);
@@ -58,16 +57,19 @@ int KeepMeAlive(int argc, char *argv[], size_t num_seconds_between_checks,
 	/*	check if there is already a watch dog (by an env variable): */
 		/*	if yes - check its pid */
 		/*	if no - create a new process and run WD and get its pid */
-	wd_pid = getenv("WD_STATUS") ? getppid() : WDPCreate();
+	wd_pid = getenv("WD_STATUS") ? getppid() : WDPCreate(argv);
 	
 	ExitIfError(wd_pid < 0, "Failed to create watch dog process!\n", -1);
-		
+	
+	/*	TODO set ENV variables to include num_allowed_misses and 
+	 *	signal_intervals */
+	
 	/*	set info struct to be transfered to the scheduler function with all
 	 *	the needede information	*/
 	wd_info.argc = argc;
 	wd_info.argv = argv;
-	wd_info.num_allowed_fails = num_allowed_fails;
-	wd_info.num_seconds_between_checks = num_seconds_between_checks;
+	wd_info.num_allowed_misses = num_allowed_misses;
+	wd_info.signal_intervals = signal_intervals;
 	
 	/*	create a thread (with niceness + 1) that will be using a scheduler
 	 *	to communicate with the Watch Dog process */
