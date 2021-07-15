@@ -101,14 +101,6 @@ int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses)
 	
 	scheduler_ty *wd_scheduler = NULL;
 	
-	typedef struct check_info
-	{
-		scheduler_ty *scheduler;
-		size_t num_allowed_misses;
-	}check_info_ty;
-	
-	check_info_ty info = {0};
-	
 	assert(num_allowed_misses);
 	
 	/*	create scheduler	*/
@@ -116,57 +108,63 @@ int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses)
 	ReturnIfError(!wd_scheduler, "Failed to create a WatchDog Scheduler!\n", 
 																	FAILURE);
 																	
-	info.scheduler = wd_scheduler;
-	info.num_allowed_misses = num_allowed_misses;
 	
-	/*	create a scheduler task SendSignal */
-	SchedulerAdd(wd_scheduler, OnIntervalSendSignalIMP, signal_intervals,
+	/*	add a scheduler task that sends signals */
+	SchedulerAdd(wd_scheduler, OnIntervalSendSignalIMP, signal_intervals, NULL);
+	
+	/*	add a scheduler task that checks if there are signals from the process */
+	SchedulerAdd(wd_scheduler, OnIntervalCheckIfMissIMP, signal_intervals, 
+															num_allowed_misses);
+	/*	add a scheduler task that checks the DNR status and stops scheduler 
+	 *	if needed */
+	SchedulerAdd(wd_scheduler, OnIntervalCheckIfDNR_IMP, signal_intervals, 
 																	scheduler);
 	
-	/*	create a scheduler task CheckIfSignalReceived */
-	SchedulerAdd(wd_scheduler, OnIntervalCheckIfMissIMP, signal_intervals, info);
-	/*	scheduler run */
+	/*	scheduler run and check its return status */
 	ret_status = SchedulerRun(wd_scheduler);
 	
 	/*	scheduler destroy */
 	SchedulerDestroy(wd_scheduler);
 	
-	/*	return */
+	/*	return if scheduler has successfully finished */
 	return (SUCCESS == ret_status ? SUCCESS : FAILURE);
 }
 /******************************************************************************/
-oper_ret_ty OnIntervalSendSignalIMP(void *scheduler)
+oper_ret_ty OnIntervalSendSignalIMP(void *unused)
 {	
+	UNUSED(unused);
+	
 	/*	send SIGUSR1 to process_to_signal and handle errors if any */
 	if (kill(g_process_to_signal, SIGUSR1))
 	{
 		return (OPER_FAILURE);
 	}
 	
-	/*	if DNR flag is on - stop the scheduler	*/
-	if (g_scheduler_should_stop)
-	{
-		SchedulerStop(scheduler);
-	}
-	
 	return (NOT_DONE);
 }
 /******************************************************************************/
-oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
+oper_ret_ty OnIntervalCheckIfMissIMP(size_t num_allowed_misses)
 {
-	assert(info);
+	assert(num_allowed_misses);
 	
 	/*	increment missed signals counter	*/
 	__sync_fetch_and_add(&g_counter_missed_signals, 1);
 
 	/*	if num_missed_signals equals num_allowed_fails : */
-	if (g_counter_missed_signals == (info->num_allowed_misses)
+	if (g_counter_missed_signals == (num_allowed_misses)
 	{
 		/*	terminate process_to_watch process */
 		/*	restart process_to_watch using argc argv parameters  */
 		RestartProcessIMP();
 	}
 	/*	end if reached num_allowed_fails */
+	
+	return (NOT_DONE);
+}
+/******************************************************************************/
+oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop)
+{
+	assert(scheduler_to_stop);
 	
 	/*	if DNR flag is on - stop the scheduler	*/
 	if (g_scheduler_should_stop)
