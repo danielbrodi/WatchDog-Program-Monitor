@@ -19,10 +19,10 @@
 /***************************** Global Definitions *****************************/
 
 /*	determines if the scheduler should stop, which means the WD should stop */
-static volatile int g_scheduler_should_stop = 0;
+static volatile sig_atomic_t g_scheduler_should_stop = 0;
 
 /*	counts amount of times that the WD did not receive a life signal	*/
-static volatile int g_counter_missed_signals = 0;
+static volatile sig_atomic_t g_counter_missed_signals = 0;
 
 /* ID of the process which should to be signaled	*/
 static volatile pid_t g_process_to_signal = 0;
@@ -86,11 +86,11 @@ void *WDManageScheduler()
 	
 	/*	create a scheduler task SendSignal */
 	SchedulerAdd(wd_scheduler, SendSignalIMP, atoi(getenv(env_signal_intervals)), 
-														NULL);
+																	scheduler);
 	
 	/*	create a scheduler task CheckIfSignalReceived */
 	SchedulerAdd(wd_scheduler, CheckIfSignalReceived, 
-								atoi(getenv(env_signal_intervals)), info);
+								atoi(getenv(env_signal_intervals)), scheduler);
 	/*	scheduler run */
 	SchedulerRun(wd_scheduler);
 	
@@ -101,7 +101,7 @@ void *WDManageScheduler()
 	return (NULL);
 }
 /******************************************************************************/
-oper_ret_ty SendSignalIMP(void *unused)
+oper_ret_ty SendSignalIMP(void *scheduler)
 {	
 	/*	send SIGUSR1 to process_to_signal and handle errors if any */
 	if (kill(g_process_to_signal, SIGUSR1))
@@ -112,30 +112,30 @@ oper_ret_ty SendSignalIMP(void *unused)
 	/*	if DNR flag is on - finish the task	*/
 	if (g_scheduler_should_stop)
 	{
-		return (DONE);
+		SchedulerStop(scheduler);
 	}
 	
 	return (NOT_DONE);
 }
 /******************************************************************************/
-oper_ret_ty CheckIfSignalReceived(void *info)
-{	
+oper_ret_ty CheckIfSignalReceived(void *scheduler)
+{
+	/*	increment missed signals counter	*/
+	__sync_fetch_and_add(&g_counter_missed_signals, 1);
+
 	/*	if num_missed_signals equals num_allowed_fails : */
 	if (g_counter_missed_signals == atoi(getenv(env_num_allowed_misses)));
 	{
 		/*	terminate process_to_watch process */
 		/*	restart process_to_watch using argc argv parameters  */
 		KillnRestartProcess(g_process_to_signal);
-			
-		/*	reset number_missed_signals counter */
-		num_missed_signals = 0;
 	}
 	/*	end if reached num_allowed_fails */
 	
 	/*	if DNR flag is on - finish the task	*/
 	if (g_scheduler_should_stop)
 	{
-		return (DONE);
+		SchedulerStop(scheduler);
 	}
 	
 	return (NOT_DONE);

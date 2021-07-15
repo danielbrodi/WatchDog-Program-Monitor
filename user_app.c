@@ -10,7 +10,7 @@
 
 #include <stdio.h>	/*	printf */
 
-int main(int argc, char *arv[])
+int main(int argc, char *argv[])
 {
 	int num = 0;
 	

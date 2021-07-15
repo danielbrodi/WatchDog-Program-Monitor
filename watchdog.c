@@ -15,10 +15,15 @@
 
 /******************************** Header Files ********************************/
 
+#define _POSIX_C_SOURCE
+
 #include <assert.h>		/*	assert	*/
 #include <pthread.h>	/*	pthread_create, pthread_t	*/
 #include <stddef.h>		/*	size_t, NULL	*/
+#include <stdio.h>		/*	sprintf			*/
+#include <stdlib.h>		/*	setenv, getenv	*/
 #include <sys/types.h>	/*	pid_t			*/
+
 
 #include "utils.h"		/*	ExitIfError, UNUSED	*/
 
@@ -56,10 +61,10 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	
 	/*	set ENV variables of num_allowed_misses and signal_intervals */
 	snprintf(env_signal_intervals, sizeof(size_t), "%ld", signal_intervals);
-	setenv("SIGNAL_INTERVAL", env_signal_intervals)
+	setenv("SIGNAL_INTERVAL", env_signal_intervals);
 	
 	snprintf(env_num_allowed_misses, sizeof(size_t), "%ld", num_allowed_misses);
-	setenv("NUM_ALLOWED_FAILURES", env_num_allowed_misses)
+	setenv("NUM_ALLOWED_FAILURES", env_num_allowed_misses);
 	
 	/*	check if there is already a watch dog (by an env variable): */
 		/*	if yes - check its pid */
@@ -80,7 +85,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	 *	to communicate with the Watch Dog process */
 	 /*	handle errors*/
 	ExitIfBad(pthread_create(&wd_thread, NULL, WDManageScheduler, info),
-										"Failed to create a WD thread\n", -1;);
+										"Failed to create a WD thread\n", -1);
 										
 	/*	return success */
 	return (0);
@@ -95,7 +100,11 @@ void DNR(void)
 	/*	busy wait and verify the watch dog is indeed terminated	*/
 	while (0 != kill(g_process_to_signal, 0)){};
 
-	pthread_join(&g_wd_thread); /*	TODO HANDLE ERRORS */
+	if (pthread_join(&g_wd_thread, NULL))
+	{
+		fprintf(stderr, "Failed to finish WD thread\n");
+		return;
+	}
 	
 	return;
 	
