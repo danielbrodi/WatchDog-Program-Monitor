@@ -14,7 +14,7 @@
 
 #include <signal.h>		/*	signals functions				*/
 
-#include "scheduler.h"
+#include "scheduler.h";
 
 /***************************** Global Definitions *****************************/
 
@@ -109,7 +109,7 @@ oper_ret_ty SendSignalIMP(void *scheduler)
 		return (OPER_FAILURE);
 	}
 	
-	/*	if DNR flag is on - finish the task	*/
+	/*	if DNR flag is on - stop the scheduler	*/
 	if (g_scheduler_should_stop)
 	{
 		SchedulerStop(scheduler);
@@ -132,7 +132,7 @@ oper_ret_ty CheckIfSignalReceived(void *scheduler)
 	}
 	/*	end if reached num_allowed_fails */
 	
-	/*	if DNR flag is on - finish the task	*/
+	/*	if DNR flag is on - stop the scheduler	*/
 	if (g_scheduler_should_stop)
 	{
 		SchedulerStop(scheduler);
