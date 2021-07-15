@@ -9,7 +9,14 @@
 #ifndef __WD_INTERNAL_H__
 #define __WD_INTERNAL_H__
 
-#endif	/* __WD_INTERNAL_H__	*/
+/*	a struct that contains all relevant and needed data to start a WD program */
+typedef struct info
+{
+	int argc;
+	char *argv[];
+	size_t num_allowed_misses;
+	time_t signal_intervals;	
+}info_ty;
 
 /*	creates and runs a Watch Dog process	*/
 /*	returns PID or (-1) if failed to create the process or to run the program */
@@ -29,6 +36,4 @@ void handler_siguser1(int sig_id);
 
 void handler_siguser2(int sig_id);
 
-
-
-
+#endif	/* __WD_INTERNAL_H__	*/

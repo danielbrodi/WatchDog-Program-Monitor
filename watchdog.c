@@ -29,15 +29,6 @@
 
 /***************************** Global Definitions *****************************/
 
-/*	a struct that will be transferred from KeepMeAlive to KeepMeAliveIMP with
- *	all CLI user parameters 	*/
-typedef struct info
-{
-	int argc;
-	char *argv[];
-	size_t num_allowed_misses;
-	time_t signal_intervals;	
-}info_ty;
 
 static pthread_t g_wd_thread = 0;
 
@@ -69,7 +60,8 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	/*	check if there is already a watch dog (by an env variable): */
 		/*	if yes - check its pid */
 		/*	if no - create a new process and run WD and get its pid */
-	g_process_to_signal = getenv("WD_STATUS") ? getppid() : WDPCreate(argv);
+	g_process_to_signal = getenv("WD_STATUS") ? getppid() : 
+														WDPCreate(argc, argv);
 	
 	ExitIfError(g_process_to_signal < 0, 
 								"Failed to create watch dog process!\n", -1);
@@ -84,7 +76,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */
 	 /*	handle errors*/
-	ExitIfBad(pthread_create(&wd_thread, NULL, WDManageScheduler, info),
+	ExitIfBad(pthread_create(&wd_thread, NULL, WDThreadManageScheduler, info),
 										"Failed to create a WD thread\n", -1);
 										
 	/*	return success */

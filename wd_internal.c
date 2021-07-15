@@ -28,80 +28,114 @@ static volatile sig_atomic_t g_counter_missed_signals = 0;
 static volatile pid_t g_process_to_signal = 0;
 
 /************************* Functions  Implementations *************************/
+
+enum {CHILD = 0};
+
 /*	WDPCreate	function - start */
-pid_t WDPCreate(char *argv[])
+pid_t WDPCreateIMP(int argc, char *argv[])
 {
+	char *argv_for_wd = NULL;
+	
 	pid_t pid = 0;
 	
 	/*	asserts */
+	assert(argc);
 	assert(argv);
+	
+	/* copy argv and attach wd_app_name to the beginning */
+	/*	TODO 	SWAP BETWEEN THE ARGS */
+	argv_for_wd = (char **)malloc(sizeof(argc) * sizeof(char *));
+	ReturnIfError(NULL == argv_for_wd, "Failed to create argv array\n", -1);
 	
 	/*	fork: 	*/
 	pid = fork();
 	
 	/*	check if process was successfully created and return error otherwise */
-	if (pid < 0)
-	{
-		return (-1);
+	ReturnIfError(pid < 0, "Failed to fork a WD process\n", -1);
+	
+	/*---------------------------------*/
+	/*	if child: */
+	if (CHILD == pid)
+	{	
+		/*	execv WATCHDOG PROGRAM with CLI parameters	-*/
+		execvp("/.watchdog", argv_for_wd);
+		
+		/*	return (-1) if any errors */
+		ReturnIfError(1, "Failed to execute the WatchDog program\n", -1);
 	}
-			/*---------------------------------*/
-			/*	if child: */
-			if (0 == pid)
-			{	
-				/*	execv WATCHDOG PROGRAM with CLI parameters	-*/
-				execvp(argv[1], argv);
-				
-				/*	return (-1) if any errors */
-				return (-1);
-			}
-			/*	end child 		*/
-			/*---------------------------------*/
+	/*	end child 		*/
+	/*---------------------------------*/
+	
+	/*---------------------------------*/
+	/*	if parent:	*/
+	else
+	{
+		sleep(1);
+		
+		free(argv);		
 			
-			/*---------------------------------*/
-			/*	if parent:	*/
-			else
-			{
-				/*	return child's pid */
-				return (pid);
+		/*	return child's pid */
+		return (pid);
 				
-			/*	end parent */
-			}
-			/*---------------------------------*/
-			
-	return (-1);
+	/*	end parent */
+	}
+	/*---------------------------------*/
 }
 /******************************************************************************/
+
+enum {SUCCESS = 0, FAILURE = 1};
+
 /*	manages WD scheduler - sends and checks for signals */
 /* TODO handle errors for each function in this part */
-void *WDManageScheduler()
-{	
-	scheduler_ty *wd_scheduler = NULL;
-
-	/*	asserts	*/
+void *WDThreadSchedulerIMP(void *info)
+{
 	assert(info);
+	
+	return (SUCCESS == WDManageScheduler(info->signal_intervals, 
+								info->num_allowed_misses) : ("SUCCESS") : NULL);
+}
+
+int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses)
+{
+	int ret_status = 0;
+	
+	scheduler_ty *wd_scheduler = NULL;
+	
+	typedef struct check_info
+	{
+		scheduler_ty *scheduler;
+		size_t num_allowed_misses;
+	}check_info_ty;
+	
+	check_info_ty info = {0};
+	
+	assert(num_allowed_misses);
 	
 	/*	create scheduler	*/
 	wd_scheduler = SchedulerCreate();
-	ExitIfError(!wd_scheduler, "Failed to create a WatchDog Scheduler!\n", -1);
+	ReturnIfError(!wd_scheduler, "Failed to create a WatchDog Scheduler!\n", 
+																	FAILURE);
+																	
+	info.scheduler = wd_scheduler;
+	info.num_allowed_misses = num_allowed_misses;
 	
 	/*	create a scheduler task SendSignal */
-	SchedulerAdd(wd_scheduler, SendSignalIMP, atoi(getenv(env_signal_intervals)), 
+	SchedulerAdd(wd_scheduler, OnIntervalSendSignalIMP, signal_intervals,
 																	scheduler);
 	
 	/*	create a scheduler task CheckIfSignalReceived */
-	SchedulerAdd(wd_scheduler, CheckIfSignalReceived, 
-								atoi(getenv(env_signal_intervals)), scheduler);
+	SchedulerAdd(wd_scheduler, OnIntervalCheckIfMissIMP, signal_intervals, info);
 	/*	scheduler run */
-	SchedulerRun(wd_scheduler);
+	ret_status = SchedulerRun(wd_scheduler);
 	
 	/*	scheduler destroy */
 	SchedulerDestroy(wd_scheduler);
 	
 	/*	return */
-	return (NULL);
+	return (SUCCESS == ret_status ? SUCCESS : FAILURE);
 }
 /******************************************************************************/
-oper_ret_ty SendSignalIMP(void *scheduler)
+oper_ret_ty OnIntervalSendSignalIMP(void *scheduler)
 {	
 	/*	send SIGUSR1 to process_to_signal and handle errors if any */
 	if (kill(g_process_to_signal, SIGUSR1))
@@ -118,24 +152,26 @@ oper_ret_ty SendSignalIMP(void *scheduler)
 	return (NOT_DONE);
 }
 /******************************************************************************/
-oper_ret_ty CheckIfSignalReceived(void *scheduler)
+oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 {
+	assert(info);
+	
 	/*	increment missed signals counter	*/
 	__sync_fetch_and_add(&g_counter_missed_signals, 1);
 
 	/*	if num_missed_signals equals num_allowed_fails : */
-	if (g_counter_missed_signals == atoi(getenv(env_num_allowed_misses)));
+	if (g_counter_missed_signals == (info->num_allowed_misses)
 	{
 		/*	terminate process_to_watch process */
 		/*	restart process_to_watch using argc argv parameters  */
-		KillnRestartProcess(g_process_to_signal);
+		RestartProcessIMP();
 	}
 	/*	end if reached num_allowed_fails */
 	
 	/*	if DNR flag is on - stop the scheduler	*/
 	if (g_scheduler_should_stop)
 	{
-		SchedulerStop(scheduler);
+		SchedulerStop(info->scheduler);
 	}
 	
 	return (NOT_DONE);
