@@ -20,20 +20,18 @@ typedef struct info
 
 /*	creates and runs a Watch Dog process	*/
 /*	returns PID or (-1) if failed to create the process or to run the program */
-pid_t WDPCreate(char *argv[]);
+int StartWDProcess(info_ty *info);
 
-void *WDManageScheduler(void *info);
-
-oper_ret_ty SendSignalIMP(void *process_to_signal);
-
-oper_ret_ty CheckIfSignalReceived(void *info);
-
-void KillnRestartProcess(pid_t process_to_kill, char *argv[]);
-
-void SetSignalHandler(int signal, void(*handler_func)(int));
-
-void handler_siguser1(int sig_id);
+void *WDThreadSchedulerIMP(void *info);
 
 void handler_siguser2(int sig_id);
+void handler_siguser1(int sig_id);
+void SetSignalHandler(int signal, void(*handler_func)(int));
+int IsProcessAliveIMP(pid_t process_to_check);
+int TerminateProcessIMP(pid_t process_to_kill);
+oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop);
+oper_ret_ty OnIntervalCheckIfMissIMP(void *info);
+oper_ret_ty OnIntervalSendSignalIMP(void *unused);
+int WDManageSchedulerIMP(info_ty *info);
 
 #endif	/* __WD_INTERNAL_H__	*/

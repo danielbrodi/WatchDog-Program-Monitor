@@ -10,11 +10,20 @@
 
 /******************************** Header Files ********************************/
 
-#define _POSIX_C_SOURCE	/*	sigaction struct 				*/
+#define _POSIX_SOURCE	/*	sigaction struct 				*/
 
+#include <assert.h>
 #include <signal.h>		/*	signals functions				*/
+#include <stdio.h>      /*  puts							*/
+#include <stdlib.h>     /*  exit                            */
+#include <errno.h>		/*	errno							*/
+#include <time.h>
 
-#include "scheduler.h";
+#include <unistd.h>     /*  fork, getppid, sleep            */
+#include <sys/types.h>	/*	pid_t							*/
+
+#include "utils.h"		/*	prints colors, UNUSED			*/
+#include "wd_internal.h"
 
 /***************************** Global Definitions *****************************/
 
@@ -31,9 +40,27 @@ enum {SUCCESS = 0, FAILURE = 1};
 
 /**************************** Forward Declarations ****************************/
 
-int StartWDProcess(void *info);
+int StartWDProcess(info_ty *info);
 
-int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses);
+void *WDThreadSchedulerIMP(void *info);
+
+int WDManageSchedulerIMP(info_ty *info);
+
+oper_ret_ty OnIntervalSendSignalIMP(void *unused);
+
+oper_ret_ty OnIntervalCheckIfMissIMP(void *info);
+
+oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop);
+
+void handler_siguser2(int sig_id);
+
+void handler_siguser1(int sig_id);
+
+void SetSignalHandler(int signal, void(*handler_func)(int));
+
+int IsProcessAliveIMP(pid_t process_to_check);
+
+int TerminateProcessIMP(pid_t process_to_kill);
 
 
 
@@ -42,11 +69,11 @@ int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses);
 enum {CHILD = 0};
 
 /*	WDPCreate	function - start */
-int StartWDProcess(void *info)
+int StartWDProcess(info_ty *info)
 {
 	pid_t pid = 0;
 	
-	char program_to_run[20] = {'\0'};
+	char *program_to_run = NULL;
 	char **argv_to_run = NULL;
 	
 	/*	asserts */
@@ -103,10 +130,10 @@ void *WDThreadSchedulerIMP(void *info)
 {
 	assert(info);
 	
-	return (SUCCESS == WDManageScheduler(info) : ("SUCCESS") : NULL);
+	return (SUCCESS == WDManageSchedulerIMP(info) : ("SUCCESS") : NULL);
 }
 /*----------------------------------------------------------------------------*/
-int WDManageSchedulerIMP(void *info)
+int WDManageSchedulerIMP(info_ty *info)
 {
 	int ret_status = 0;
 	
@@ -168,7 +195,7 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 	
 	assert(info);
 	
-	num_allowed_misses = info->num_allowed_misses;
+	num_allowed_misses = ((info_ty *)info)->num_allowed_misses;
 	
 	assert(num_allowed_misses);
 	
@@ -184,7 +211,7 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 			return (OPER_FAILURE);
 		}
 		
-		if (-1 == StartWDProcess())
+		if (-1 == StartWDProcess(info))
 		{
 			return (OPER_FAILURE);
 		}
@@ -202,7 +229,7 @@ oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop)
 	/*	if DNR flag is on - stop the scheduler	*/
 	if (g_scheduler_should_stop)
 	{
-		SchedulerStop(scheduler_to_stop);
+		SchedulerStop((scheduler_ty *)scheduler_to_stop);
 	}
 	
 	/*	keep checking */
@@ -256,7 +283,7 @@ int IsProcessAliveIMP(pid_t process_to_check)
 	}
 	
 	start_time = time(0);
-	end_time = start_time + seconds_to_wait;
+	end_time = start_time + time_to_wait;
 	
 	/*	verify its terminated	*/
 	while (0 != kill(process_to_check, 0) && start_time < end_time)
@@ -279,7 +306,7 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 	
 	/* 	clean the set of signals that aren’t permitted to
 	*	interrupt execution of this handler.	*/
-	ExitIfBad(-1 == sigemptyset(&signal_action.sa_mask), 
+	ExitIfError(-1 == sigemptyset(&signal_action.sa_mask), 
 								"Error: Could not empty set of signals\n", 1);
 
 	signal_action.sa_flags = 0;
@@ -289,7 +316,7 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 
 	/*	register the user defined signal handler to handle the signal	*/
 	/*	handle errors if any	*/
-	ExitIfBad(sigaction(signal, &signal_action, NULL) < 0, 
+	ExitIfError(sigaction(signal, &signal_action, NULL) < 0, 
 				"Error: Could not set register a sigaction handler\n", 1);
 }
 /******************************************************************************/

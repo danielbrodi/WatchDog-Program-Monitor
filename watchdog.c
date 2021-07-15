@@ -13,15 +13,12 @@
 						restart it if needed.
 \******************************************************************************/
 
-#include "../../ds/include/scheduler.h"
-#include "../../ds/source/scheduler.c"
-#include "../../ds/include/operation_func.h"
 
 /******************************** Header Files ********************************/
 
 #define _POSIX_SOURCE
 
-#include <assert.h>		/*	assert	*/
+#include <assert.h>		/*	assert	*/	
 #include <pthread.h>	/*	pthread_create, pthread_t	*/
 #include <stddef.h>		/*	size_t, NULL	*/
 #include <stdio.h>		/*	sprintf			*/
