@@ -29,6 +29,14 @@ static volatile pid_t g_process_to_signal = 0;
 
 enum {SUCCESS = 0, FAILURE = 1};
 
+/**************************** Forward Declarations ****************************/
+
+int StartWDProcess(void *info);
+
+int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses);
+
+
+
 /************************* Functions  Implementations *************************/
 
 enum {CHILD = 0};
@@ -95,16 +103,24 @@ void *WDThreadSchedulerIMP(void *info)
 {
 	assert(info);
 	
-	return (SUCCESS == WDManageScheduler(info->signal_intervals, 
-								info->num_allowed_misses) : ("SUCCESS") : NULL);
+	return (SUCCESS == WDManageScheduler(info) : ("SUCCESS") : NULL);
 }
 /*----------------------------------------------------------------------------*/
-int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses)
+int WDManageSchedulerIMP(void *info)
 {
 	int ret_status = 0;
 	
+	size_t signal_intervals = 0;
+	size_t num_allowed_misses = 0;
+	
 	scheduler_ty *wd_scheduler = NULL;
 	
+	assert(info);
+	
+	signal_intervals = info->signal_intervals;
+	num_allowed_misses = info->num_allowed_misses;
+	
+	assert(signal_intervals);
 	assert(num_allowed_misses);
 	
 	/*	create scheduler	*/
@@ -116,12 +132,11 @@ int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses)
 	SchedulerAdd(wd_scheduler, OnIntervalSendSignalIMP, signal_intervals, NULL);
 	
 	/*	add a scheduler task that checks if there are signals from the process */
-	SchedulerAdd(wd_scheduler, OnIntervalCheckIfMissIMP, signal_intervals, 
-															num_allowed_misses);
+	SchedulerAdd(wd_scheduler, OnIntervalCheckIfMissIMP, signal_intervals, info);
 															
 	/*	add a scheduler task that checks the DNR status and stops scheduler 
 	 *	if needed */
-	SchedulerAdd(wd_scheduler, OnIntervalCheckIfDNR_IMP, 1, scheduler);
+	SchedulerAdd(wd_scheduler, OnIntervalCheckIfDNR_IMP, 1, wd_scheduler);
 	
 	/*	scheduler run and check its return status */
 	ret_status = SchedulerRun(wd_scheduler);
@@ -149,13 +164,19 @@ oper_ret_ty OnIntervalSendSignalIMP(void *unused)
 /******************************************************************************/
 oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 {
+	size_t num_allowed_misses = 0;
+	
+	assert(info);
+	
+	num_allowed_misses = info->num_allowed_misses;
+	
 	assert(num_allowed_misses);
 	
 	/*	increment missed signals counter	*/
 	__sync_fetch_and_add(&g_counter_missed_signals, 1);
 
 	/*	if num_missed_signals equals num_allowed_fails : */
-	if (g_counter_missed_signals == (num_allowed_misses)
+	if (num_allowed_misses == g_counter_missed_signals)
 	{
 		/*	restart process_to_watch using its original argv parameters  */
 		if (FAILURE == TerminateProcessIMP(g_process_to_signal))

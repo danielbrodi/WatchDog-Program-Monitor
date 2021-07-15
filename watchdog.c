@@ -13,9 +13,13 @@
 						restart it if needed.
 \******************************************************************************/
 
+#include "../../ds/include/scheduler.h"
+#include "../../ds/source/scheduler.c"
+#include "../../ds/include/operation_func.h"
+
 /******************************** Header Files ********************************/
 
-#define _POSIX_C_SOURCE
+#define _POSIX_SOURCE
 
 #include <assert.h>		/*	assert	*/
 #include <pthread.h>	/*	pthread_create, pthread_t	*/
@@ -24,7 +28,7 @@
 #include <stdlib.h>		/*	setenv, getenv	*/
 #include <sys/types.h>	/*	pid_t			*/
 
-
+#include "wd_internal.h"
 #include "utils.h"		/*	ExitIfError, UNUSED	*/
 
 /***************************** Global Definitions *****************************/
