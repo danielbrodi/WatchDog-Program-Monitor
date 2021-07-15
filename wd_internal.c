@@ -27,6 +27,8 @@ static volatile sig_atomic_t g_counter_missed_signals = 0;
 /* ID of the process which should to be signaled	*/
 static volatile pid_t g_process_to_signal = 0;
 
+enum {SUCCESS = 0, FAILURE = 1};
+
 /************************* Functions  Implementations *************************/
 
 enum {CHILD = 0};
@@ -82,11 +84,7 @@ pid_t WDPCreateIMP(int argc, char *argv[])
 	/*---------------------------------*/
 }
 /******************************************************************************/
-
-enum {SUCCESS = 0, FAILURE = 1};
-
 /*	manages WD scheduler - sends and checks for signals */
-/* TODO handle errors for each function in this part */
 void *WDThreadSchedulerIMP(void *info)
 {
 	assert(info);
@@ -94,7 +92,7 @@ void *WDThreadSchedulerIMP(void *info)
 	return (SUCCESS == WDManageScheduler(info->signal_intervals, 
 								info->num_allowed_misses) : ("SUCCESS") : NULL);
 }
-
+/*----------------------------------------------------------------------------*/
 int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses)
 {
 	int ret_status = 0;
@@ -108,17 +106,16 @@ int WDManageSchedulerIMP(size_t signal_intervals, size_t num_allowed_misses)
 	ReturnIfError(!wd_scheduler, "Failed to create a WatchDog Scheduler!\n", 
 																	FAILURE);
 																	
-	
 	/*	add a scheduler task that sends signals */
 	SchedulerAdd(wd_scheduler, OnIntervalSendSignalIMP, signal_intervals, NULL);
 	
 	/*	add a scheduler task that checks if there are signals from the process */
 	SchedulerAdd(wd_scheduler, OnIntervalCheckIfMissIMP, signal_intervals, 
 															num_allowed_misses);
+															
 	/*	add a scheduler task that checks the DNR status and stops scheduler 
 	 *	if needed */
-	SchedulerAdd(wd_scheduler, OnIntervalCheckIfDNR_IMP, signal_intervals, 
-																	scheduler);
+	SchedulerAdd(wd_scheduler, OnIntervalCheckIfDNR_IMP, 1, scheduler);
 	
 	/*	scheduler run and check its return status */
 	ret_status = SchedulerRun(wd_scheduler);
@@ -140,6 +137,7 @@ oper_ret_ty OnIntervalSendSignalIMP(void *unused)
 		return (OPER_FAILURE);
 	}
 	
+	/*	keep signaling */
 	return (NOT_DONE);
 }
 /******************************************************************************/
@@ -153,12 +151,12 @@ oper_ret_ty OnIntervalCheckIfMissIMP(size_t num_allowed_misses)
 	/*	if num_missed_signals equals num_allowed_fails : */
 	if (g_counter_missed_signals == (num_allowed_misses)
 	{
-		/*	terminate process_to_watch process */
-		/*	restart process_to_watch using argc argv parameters  */
+		/*	restart process_to_watch using its original argv parameters  */
 		RestartProcessIMP();
 	}
 	/*	end if reached num_allowed_fails */
 	
+	/*	keep checking */
 	return (NOT_DONE);
 }
 /******************************************************************************/
@@ -169,21 +167,72 @@ oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop)
 	/*	if DNR flag is on - stop the scheduler	*/
 	if (g_scheduler_should_stop)
 	{
-		SchedulerStop(info->scheduler);
+		SchedulerStop(scheduler_to_stop);
 	}
 	
+	/*	keep checking */
 	return (NOT_DONE);
 }
 /******************************************************************************/
-void KillnRestartProcess(pid_t process_to_restart, char *argv[])
+int TerminateProcessIMP(pid_t process_to_kill)
 {
-	process_to_kill = process_to_restart;
-		
+	time_t start_time = 0;
+	time_t end_time = 0;
+	time_t time_to_wait = 10; /* in seconds */
+    
+	assert(process_to_kill);
+	
+	/*---------------------------------------------------------*/
+	/*	check if process is already does not exist */
+	if (0 == kill(process_to_kill, 0))
+	{
+		return (SUCCESS);
+	}
+	/*---------------------------------------------------------*/
 	/*	terminate process_to_kill	*/
 	kill(process_to_kill, SIGTERM);
 	
+	start_time = time(0);
+	end_time = start_time + seconds_to_wait;
+	
 	/*	verify its terminated	*/
-	while (0 != kill(process_to_kill, 0)){};
+	while (0 != kill(process_to_kill, 0) && start_time < end_time)
+	{
+		sleep(1);
+	}
+	
+	/*	check if it still exists */
+	if (0 == kill(process_to_kill, 0))
+	{
+		return (SUCCESS);
+	}
+	
+	/*---------------------------------------------------------*/
+	/*	if its still alive, SIGKILL it */
+	kill(process_to_kill, SIGKILL);
+	
+	start_time = time(0);
+	end_time = start_time + seconds_to_wait;
+	
+	/*	verify its terminated	*/
+	while (0 != kill(process_to_kill, 0) && start_time < end_time)
+	{
+		sleep(1);
+	}
+	
+	/*	check if it still exists */
+	if (0 == kill(process_to_kill, 0))
+	{
+		return (SUCCESS);
+	}
+	/*---------------------------------------------------------*/
+	
+	return (FAILURE);
+}
+/******************************************************************************/
+void RestartProcessIMP(pid_t process_to_restart, char *argv[])
+{		
+	TerminateProcessIMP(pid_t process_to_kill);
 	
 	/*	fork: 	*/
 	pid = fork();
