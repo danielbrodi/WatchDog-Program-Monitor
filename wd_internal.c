@@ -152,7 +152,10 @@ oper_ret_ty OnIntervalCheckIfMissIMP(size_t num_allowed_misses)
 	if (g_counter_missed_signals == (num_allowed_misses)
 	{
 		/*	restart process_to_watch using its original argv parameters  */
-		RestartProcessIMP();
+		if (-1 == RestartProcessIMP())
+		{
+			return (OPER_FAILURE);
+		}
 	}
 	/*	end if reached num_allowed_fails */
 	
@@ -230,7 +233,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	return (FAILURE);
 }
 /******************************************************************************/
-void RestartProcessIMP(pid_t process_to_restart, char *argv[])
+int RestartProcessIMP(pid_t process_to_restart, char *argv[])
 {		
 	TerminateProcessIMP(pid_t process_to_kill);
 	
@@ -238,17 +241,17 @@ void RestartProcessIMP(pid_t process_to_restart, char *argv[])
 	pid = fork();
 	
 	/*	handle fork errors */
-	ExitIfError(pid < 0, "Failed to restart application!\n", -1);
+	ReturnIfError(pid < 0, "Failed to restart application!\n", -1);
 	
 	/*---------------------------------*/
 	/*	if child: */
 	if (0 == pid)
 	{
-		/*	execv WATCHDOG PROGRAM with argv	-*/
+		/*	execv TODO with argv	-*/
 		execvp("./watchdog", argv + 1);
 			
 		/*	return (-1) if any errors */
-		return (-1);
+		ReturnIfError(1, "Failed to fork a WD/UserApp Process\n", -1);
 		
 	/*	end child 		*/
 	}
@@ -257,6 +260,7 @@ void RestartProcessIMP(pid_t process_to_restart, char *argv[])
 	/*	if parent:	*/
 	else
 	{
+		/*	update global variable with the new created process's PID */
 		g_process_to_signal = pid;
 		
 		return;
