@@ -205,8 +205,8 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 /******************************************************************************/
 void handler_siguser1(int sig_id)
 {
-	/*	increment global flag of received or not signal */
-	__sync_fetch_and_add(&g_counter_missed_signals, 1);
+	/*	reset counter of missed signals by XOR counter with itself */
+	__sync_fetch_and_xor(&g_counter_missed_signals, g_counter_missed_signals);
 	
 	return;
 }
