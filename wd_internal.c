@@ -34,36 +34,42 @@ enum {SUCCESS = 0, FAILURE = 1};
 enum {CHILD = 0};
 
 /*	WDPCreate	function - start */
-pid_t WDPCreateIMP(int argc, char *argv[])
+int StartWDProcess(void *info)
 {
-	char *argv_for_wd = NULL;
-	
 	pid_t pid = 0;
 	
-	/*	asserts */
-	assert(argc);
-	assert(argv);
+	char program_to_run[20] = {'\0'};
+	char **argv_to_run = NULL;
 	
-	/* copy argv and attach wd_app_name to the beginning */
-	/*	TODO 	SWAP BETWEEN THE ARGS */
-	argv_for_wd = (char **)malloc(sizeof(argc) * sizeof(char *));
-	ReturnIfError(NULL == argv_for_wd, "Failed to create argv array\n", -1);
+	/*	asserts */
+	assert(info);
+	
+	if (info->i_am_wd)
+	{
+		program_to_run = "./userapp";
+		argv_to_run = info->argv_for_wd + 1;
+	}
+	else
+	{
+		program_to_run = "./watchdog";
+		argv_to_run = info->argv_for_wd;
+	}
 	
 	/*	fork: 	*/
 	pid = fork();
 	
 	/*	check if process was successfully created and return error otherwise */
-	ReturnIfError(pid < 0, "Failed to fork a WD process\n", -1);
+	ReturnIfError(pid < 0, "Failed to fork a WD process\n", FAILURE);
 	
 	/*---------------------------------*/
 	/*	if child: */
 	if (CHILD == pid)
 	{	
-		/*	execv WATCHDOG PROGRAM with CLI parameters	-*/
-		execvp("/.watchdog", argv_for_wd);
+		/*	execv needed program	*/
+		execvp(program_to_run, argv_to_run);
 		
 		/*	return (-1) if any errors */
-		ReturnIfError(1, "Failed to execute the WatchDog program\n", -1);
+		ReturnIfError(1, "Failed to execute the WatchDog program\n", FAILURE);
 	}
 	/*	end child 		*/
 	/*---------------------------------*/
@@ -74,10 +80,10 @@ pid_t WDPCreateIMP(int argc, char *argv[])
 	{
 		sleep(1);
 		
-		free(argv);		
-			
 		/*	return child's pid */
-		return (pid);
+		g_process_to_signal = pid;
+		
+		return (SUCCESS);
 				
 	/*	end parent */
 	}
@@ -141,7 +147,7 @@ oper_ret_ty OnIntervalSendSignalIMP(void *unused)
 	return (NOT_DONE);
 }
 /******************************************************************************/
-oper_ret_ty OnIntervalCheckIfMissIMP(size_t num_allowed_misses)
+oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 {
 	assert(num_allowed_misses);
 	
@@ -152,7 +158,12 @@ oper_ret_ty OnIntervalCheckIfMissIMP(size_t num_allowed_misses)
 	if (g_counter_missed_signals == (num_allowed_misses)
 	{
 		/*	restart process_to_watch using its original argv parameters  */
-		if (-1 == RestartProcessIMP())
+		if (FAILURE == TerminateProcessIMP(g_process_to_signal))
+		{
+			return (OPER_FAILURE);
+		}
+		
+		if (-1 == StartWDProcess())
 		{
 			return (OPER_FAILURE);
 		}
@@ -178,16 +189,12 @@ oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop)
 }
 /******************************************************************************/
 int TerminateProcessIMP(pid_t process_to_kill)
-{
-	time_t start_time = 0;
-	time_t end_time = 0;
-	time_t time_to_wait = 10; /* in seconds */
-    
+{    
 	assert(process_to_kill);
 	
 	/*---------------------------------------------------------*/
 	/*	check if process is already does not exist */
-	if (0 == kill(process_to_kill, 0))
+	if (!IsProcessAliveIMP(process_to_kill))
 	{
 		return (SUCCESS);
 	}
@@ -195,17 +202,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	/*	terminate process_to_kill	*/
 	kill(process_to_kill, SIGTERM);
 	
-	start_time = time(0);
-	end_time = start_time + seconds_to_wait;
-	
-	/*	verify its terminated	*/
-	while (0 != kill(process_to_kill, 0) && start_time < end_time)
-	{
-		sleep(1);
-	}
-	
-	/*	check if it still exists */
-	if (0 == kill(process_to_kill, 0))
+	if (!IsProcessAliveIMP(process_to_kill))
 	{
 		return (SUCCESS);
 	}
@@ -214,17 +211,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	/*	if its still alive, SIGKILL it */
 	kill(process_to_kill, SIGKILL);
 	
-	start_time = time(0);
-	end_time = start_time + seconds_to_wait;
-	
-	/*	verify its terminated	*/
-	while (0 != kill(process_to_kill, 0) && start_time < end_time)
-	{
-		sleep(1);
-	}
-	
-	/*	check if it still exists */
-	if (0 == kill(process_to_kill, 0))
+	if (!IsProcessAliveIMP(process_to_kill))
 	{
 		return (SUCCESS);
 	}
@@ -233,41 +220,36 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	return (FAILURE);
 }
 /******************************************************************************/
-int RestartProcessIMP(pid_t process_to_restart, char *argv[])
-{		
-	TerminateProcessIMP(pid_t process_to_kill);
+int IsProcessAliveIMP(pid_t process_to_check)
+{
+	time_t start_time = 0;
+	time_t end_time = 0;
+	time_t time_to_wait = 10; /* in seconds */
 	
-	/*	fork: 	*/
-	pid = fork();
+	assert(process_to_check);
 	
-	/*	handle fork errors */
-	ReturnIfError(pid < 0, "Failed to restart application!\n", -1);
-	
-	/*---------------------------------*/
-	/*	if child: */
-	if (0 == pid)
+	/*	check if its already dead */
+	if (0 == kill(process_to_check, 0))
 	{
-		/*	execv TODO with argv	-*/
-		execvp("./watchdog", argv + 1);
-			
-		/*	return (-1) if any errors */
-		ReturnIfError(1, "Failed to fork a WD/UserApp Process\n", -1);
-		
-	/*	end child 		*/
+		return (0);
 	}
-	/*---------------------------------*/
 	
-	/*	if parent:	*/
-	else
+	start_time = time(0);
+	end_time = start_time + seconds_to_wait;
+	
+	/*	verify its terminated	*/
+	while (0 != kill(process_to_check, 0) && start_time < end_time)
 	{
-		/*	update global variable with the new created process's PID */
-		g_process_to_signal = pid;
-		
-		return;
-		
-	/*	end parent */
+		sleep(1);
 	}
-	/*---------------------------------*/
+	
+	/*	check if it still exists */
+	if (0 == kill(process_to_check, 0))
+	{
+		return (0);
+	}
+	
+	return (1);
 }
 /******************************************************************************/
 void SetSignalHandler(int signal, void(*handler_func)(int))
