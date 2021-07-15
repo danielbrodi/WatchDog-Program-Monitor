@@ -19,23 +19,19 @@
 /***************************** Global Definitions *****************************/
 
 /*	determines if the scheduler should stop, which means the WD should stop */
-static int g_scheduler_should_stop = 0;
+static volatile int g_scheduler_should_stop = 0;
 
-/*	indicates if right signal from the watched app was received by the WD */
-static int g_is_signal_received = 0;
+/*	counts amount of times that the WD did not receive a life signal	*/
+static volatile int g_counter_missed_signals = 0;
 
-/*	counts amount of times that the WD did not receive a signal from the app */
-static int g_counter_missed_signals = 0;
-
-static pid_t g_process_to_signal = 0;
+/* ID of the process which should to be signaled	*/
+static volatile pid_t g_process_to_signal = 0;
 
 /************************* Functions  Implementations *************************/
 /*	WDPCreate	function - start */
 pid_t WDPCreate(char *argv[])
 {
 	pid_t pid = 0;
-	
-	int curr_priority = 0;
 	
 	/*	asserts */
 	assert(argv);
@@ -53,7 +49,7 @@ pid_t WDPCreate(char *argv[])
 			if (0 == pid)
 			{	
 				/*	execv WATCHDOG PROGRAM with CLI parameters	-*/
-				execvp("./watchdog", argv + 1);
+				execvp(argv[1], argv);
 				
 				/*	return (-1) if any errors */
 				return (-1);
@@ -77,7 +73,7 @@ pid_t WDPCreate(char *argv[])
 /******************************************************************************/
 /*	manages WD scheduler - sends and checks for signals */
 /* TODO handle errors for each function in this part */
-void *WDManageScheduler(void *info)
+void *WDManageScheduler()
 {	
 	scheduler_ty *wd_scheduler = NULL;
 
@@ -89,12 +85,12 @@ void *WDManageScheduler(void *info)
 	ExitIfError(!wd_scheduler, "Failed to create a WatchDog Scheduler!\n", -1);
 	
 	/*	create a scheduler task SendSignal */
-	SchedulerAdd(wd_scheduler, SendSignalIMP, info.signal_intervals, 
-														g_process_to_signal);
+	SchedulerAdd(wd_scheduler, SendSignalIMP, atoi(getenv(env_signal_intervals)), 
+														NULL);
 	
 	/*	create a scheduler task CheckIfSignalReceived */
-	SchedulerAdd(wd_scheduler, CheckIfSignalReceived, info.signal_intervals + 5, 
-																		info);
+	SchedulerAdd(wd_scheduler, CheckIfSignalReceived, 
+								atoi(getenv(env_signal_intervals)), info);
 	/*	scheduler run */
 	SchedulerRun(wd_scheduler);
 	
@@ -105,55 +101,49 @@ void *WDManageScheduler(void *info)
 	return (NULL);
 }
 /******************************************************************************/
-oper_ret_ty SendSignalIMP(void *process_to_signal)
-{
-	pid_t pid = 0;
-	
-	assert(process_to_signal);
-	
-	pid = *(pid_t *)process_to_signal;
-	
+oper_ret_ty SendSignalIMP(void *unused)
+{	
 	/*	send SIGUSR1 to process_to_signal and handle errors if any */
-	if (kill(pid, SIGUSR1))
+	if (kill(g_process_to_signal, SIGUSR1))
 	{
 		return (OPER_FAILURE);
 	}
 	
-	return (DONE);
+	/*	if DNR flag is on - finish the task	*/
+	if (g_scheduler_should_stop)
+	{
+		return (DONE);
+	}
+	
+	return (NOT_DONE);
 }
 /******************************************************************************/
 oper_ret_ty CheckIfSignalReceived(void *info)
-{
-	/*	check if the "received signal" flag is toggled */
-	if (g_is_signal_received)
-	{
-		/*	if yes : decrement it and do nothing, continue. */
-			--g_is_signal_received;
-	}
-	/*	if signal was not received:  increment num_missed_signals counter 	*/
-	else
-	{
-		++num_missed_signals;
-	}
-	
+{	
 	/*	if num_missed_signals equals num_allowed_fails : */
-	if (num_missed_signals == info.num_allowed_fails)
+	if (g_counter_missed_signals == atoi(getenv(env_num_allowed_misses)));
 	{
 		/*	terminate process_to_watch process */
 		/*	restart process_to_watch using argc argv parameters  */
-		KillnRestartProcess();
+		KillnRestartProcess(g_process_to_signal);
 			
 		/*	reset number_missed_signals counter */
 		num_missed_signals = 0;
 	}
-		
 	/*	end if reached num_allowed_fails */
-	return (DONE);
+	
+	/*	if DNR flag is on - finish the task	*/
+	if (g_scheduler_should_stop)
+	{
+		return (DONE);
+	}
+	
+	return (NOT_DONE);
 }
 /******************************************************************************/
-void KillnRestartProcess(char *argv[])
+void KillnRestartProcess(pid_t process_to_restart, char *argv[])
 {
-	process_to_kill = g_process_to_signal;
+	process_to_kill = process_to_restart;
 		
 	/*	terminate process_to_kill	*/
 	kill(process_to_kill, SIGTERM);
@@ -216,7 +206,7 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 void handler_siguser1(int sig_id)
 {
 	/*	increment global flag of received or not signal */
-	__sync_fetch_and_add(&g_is_signal_received, 1);
+	__sync_fetch_and_add(&g_counter_missed_signals, 1);
 	
 	return;
 }

@@ -34,15 +34,14 @@ typedef struct info
 	time_t signal_intervals;	
 }info_ty;
 
+static pthread_t g_wd_thread = 0;
+
 /************************* Functions  Implementations *************************/	
 
-int KeepMeAlive(int argc, char *argv[])
+void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
+													size_t num_allowed_misses)
 {
 	info_ty wd_info = {0};
-	
-	pid_t wd_pid = 0;
-	
-	pthread_t wd_thread = 0;
 	
 	/*	stores values of num_allowed_misses and signal_intervals as env vars */
 	char env_num_allowed_misses[8];
@@ -54,22 +53,21 @@ int KeepMeAlive(int argc, char *argv[])
 	
 	/*	register SIGUSR1 signal handler to manage received signals status */
 	SetSignalHandler(SIGUSR1, handle_siguser1);
-	/*	register SIGUSR2 signal handler request of DNR */	
-	SetSignalHandler(SIGUSR2, handle_siguser2);
+	
+	/*	set ENV variables of num_allowed_misses and signal_intervals */
+	snprintf(env_signal_intervals, sizeof(size_t), "%ld", signal_intervals);
+	setenv("SIGNAL_INTERVAL", env_signal_intervals)
+	
+	snprintf(env_num_allowed_misses, sizeof(size_t), "%ld", num_allowed_misses);
+	setenv("NUM_ALLOWED_FAILURES", env_num_allowed_misses)
 	
 	/*	check if there is already a watch dog (by an env variable): */
 		/*	if yes - check its pid */
 		/*	if no - create a new process and run WD and get its pid */
-	wd_pid = getenv("WD_STATUS") ? getppid() : WDPCreate(argv);
+	g_process_to_signal = getenv("WD_STATUS") ? getppid() : WDPCreate(argv);
 	
-	ExitIfError(wd_pid < 0, "Failed to create watch dog process!\n", -1);
-	
-	/*	set ENV variables of num_allowed_misses and signal_intervals */
-	snprintf(env_signal_intervals, sizeof(size_t), "%ld", signal_intervals);
-	putenv(env_signal_intervals);
-	
-	snprintf(env_num_allowed_misses, sizeof(size_t), "%ld", num_allowed_misses);
-	putenv(env_num_allowed_misses);
+	ExitIfError(g_process_to_signal < 0, 
+								"Failed to create watch dog process!\n", -1);
 	
 	/*	set info struct to be transfered to the scheduler function with all
 	 *	the needede information	*/
@@ -83,6 +81,7 @@ int KeepMeAlive(int argc, char *argv[])
 	 /*	handle errors*/
 	ExitIfBad(pthread_create(&wd_thread, NULL, WDManageScheduler, info),
 										"Failed to create a WD thread\n", -1;);
+										
 	/*	return success */
 	return (0);
 }
@@ -95,6 +94,8 @@ void DNR(void)
 	
 	/*	busy wait and verify the watch dog is indeed terminated	*/
 	while (0 != kill(g_process_to_signal, 0)){};
+
+	pthread_join(&g_wd_thread); /*	TODO HANDLE ERRORS */
 	
 	return;
 	
