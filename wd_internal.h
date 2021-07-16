@@ -9,6 +9,9 @@
 #ifndef __WD_INTERNAL_H__
 #define __WD_INTERNAL_H__
 
+#include "scheduler.h"
+
+
 /*	a struct that contains all relevant and needed data to start a WD program */
 typedef struct info
 {

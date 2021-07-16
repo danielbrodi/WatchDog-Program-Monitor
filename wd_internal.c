@@ -24,6 +24,7 @@
 
 #include "utils.h"		/*	prints colors, UNUSED			*/
 #include "wd_internal.h"
+#include "scheduler.h"
 
 /***************************** Global Definitions *****************************/
 
@@ -35,8 +36,6 @@ static volatile sig_atomic_t g_counter_missed_signals = 0;
 
 /* ID of the process which should to be signaled	*/
 static volatile pid_t g_process_to_signal = 0;
-
-enum {SUCCESS = 0, FAILURE = 1};
 
 /**************************** Forward Declarations ****************************/
 
@@ -61,8 +60,6 @@ void SetSignalHandler(int signal, void(*handler_func)(int));
 int IsProcessAliveIMP(pid_t process_to_check);
 
 int TerminateProcessIMP(pid_t process_to_kill);
-
-
 
 /************************* Functions  Implementations *************************/
 
@@ -130,7 +127,7 @@ void *WDThreadSchedulerIMP(void *info)
 {
 	assert(info);
 	
-	return (SUCCESS == WDManageSchedulerIMP(info) : ("SUCCESS") : NULL);
+	return (NULL);
 }
 /*----------------------------------------------------------------------------*/
 int WDManageSchedulerIMP(info_ty *info)
