@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	/*	add itself to env variable to indicate there is a running watch dog */
 	/*	handle errors	*/
 	putenv("WD_IS_ON=1");
-	printf(BLUE "[wd] WD IS RUNNING!\n" NORMAL);
+	printf(BLUE "[wd] WD IS RUNNING! " NORMAL "\n");
 	/* copy argv and attach wd_app_name to the beginning */
 	argv_to_run = (char **)(calloc(argc, sizeof(char *)));
 	ReturnIfError(NULL == argv_to_run, "[wd] Failed to create argv array\n", -1);

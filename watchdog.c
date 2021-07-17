@@ -76,6 +76,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	argv_for_wd[0] = "./watchdog";
 	
 	memcpy(argv_for_wd + 1, argv, argc);
+	*(argv_for_wd + argc) = NULL;
 	
 	/*	set info struct to be transfered to the scheduler function with all
 	 *	the needede information	*/
@@ -98,9 +99,11 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 		StartWDProcess(info);
 	}
 	
-	printf(CYAN "[app] P TO SIGNAL: %d\n" NORMAL, g_process_to_signal);
+	printf(CYAN "[app] WatchDog PID: %d\n" NORMAL, g_process_to_signal);
 	ReturnIfError(g_process_to_signal <= 0, 
 								"[app] Failed to create watch dog process!\n", -1);
+	
+	sleep(3);
 	
 	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */

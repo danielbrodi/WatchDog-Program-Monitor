@@ -94,15 +94,17 @@ int StartWDProcess(info_ty *info)
 	/*	asserts */
 	assert(info);
 	
+	/*	check if the caller of the function is the Watch Dog or the user
+	 *	program. */
 	if (info->i_am_wd)
 	{
-		printf(CYAN "I AM WD ->\n");
-		program_to_run = "user_app";
+		printf(CYAN "I AM WD ->\n");	
+		program_to_run = "./user_app";
 	}
 	else
 	{
 		printf(CYAN "I AM USER APP ->\n");
-		program_to_run = "watchdog";
+		program_to_run = "./watchdog";
 	}
 	
 	/*	fork: 	*/
@@ -117,7 +119,7 @@ int StartWDProcess(info_ty *info)
 	{	
 		/*	execv needed program	*/
 		argv_to_run = info->argv_for_wd;
-		execv(program_to_run, argv_to_run);
+		execvp(program_to_run, argv_to_run);
 		
 		/*	return (-1) if any errors */
 		ReturnIfError(1, "Failed to execute the WatchDog program\n", FAILURE);
@@ -200,6 +202,8 @@ oper_ret_ty OnIntervalSendSignalIMP(void *unused)
 	{
 		return (OPER_FAILURE);
 	}
+	
+	printf(GREEN "Signal Sent from %d to %d\n", getpid(), g_process_to_signal);
 	
 	/*	keep signaling */
 	return (NOT_DONE);
