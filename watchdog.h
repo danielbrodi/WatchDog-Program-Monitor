@@ -11,8 +11,8 @@
 
 #include <stddef.h>		/*	size_t	*/
 
-void KeepMeAlive(int argc, char *argv[], size_t num_seconds_between_checks,
-													size_t num_allowed_fails);
+void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
+													size_t num_allowed_misses);
 int DNR(void);
 
 #endif	/* __WATCHDOG_H__	*/

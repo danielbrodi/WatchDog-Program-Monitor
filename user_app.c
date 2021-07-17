@@ -10,6 +10,8 @@
 
 #include <stdio.h>	/*	printf */
 
+#include "watchdog.c"
+
 int main(int argc, char *argv[])
 {
 	int num = 0;

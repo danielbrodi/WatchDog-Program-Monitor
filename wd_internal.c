@@ -13,10 +13,10 @@
 #define _POSIX_SOURCE	/*	sigaction struct 				*/
 
 #include <assert.h>
+#include <errno.h>		/*	errno							*/
 #include <signal.h>		/*	signals functions				*/
 #include <stdio.h>      /*  puts							*/
 #include <stdlib.h>     /*  exit                            */
-#include <errno.h>		/*	errno							*/
 #include <time.h>
 
 #include <unistd.h>     /*  fork, getppid, sleep            */
