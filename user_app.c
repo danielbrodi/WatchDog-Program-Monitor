@@ -20,18 +20,17 @@ int main(int argc, char *argv[])
 	
 	size_t num_allowed_fails = 3;
 	
-	size_t num_seconds_between_checks = 10;
+	size_t num_seconds_between_checks = 1;
 	
 	KeepMeAlive(argc, argv, num_seconds_between_checks, num_allowed_fails);
 	
-	while (num < 1000)
+	while (num < 3)
 	{
 		printf("Your lucky number is: %d\n", num);
 		sleep(1);
 		++num;
 	}
-	
-	DNR();
+
 	
 	return (0);
 }

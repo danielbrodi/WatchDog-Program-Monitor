@@ -15,26 +15,28 @@
 
 /******************************** Header Files ********************************/
 
-#define _XOPEN_SOURCE
+#define _XOPEN_SOURCE	/*	putenv	*/
 
 #include <assert.h>		/*	assert	*/	
 #include <stddef.h>		/*	size_t, NULL	*/
-#include <stdio.h>
+#include <stdio.h>		/*	sprintf	*/
 #include <stdlib.h>		/*	setenv, getenv	*/
-#include <string.h>
+#include <string.h>		/*	memcpy		*/
 
 #include <pthread.h>	/*	pthread_create, pthread_t	*/
-#include <signal.h>
+#include <signal.h>		/*	signals functions */
 #include <unistd.h>
 #include <sys/types.h>	/*	pid_t			*/
 
-#include "utils.h"
+#include "utils.h"		/*	ReturnIfError	*/
 #include "wd_internal.h"
 #include "wd_internal.c"
 #include "watchdog.h"
 
 /***************************** Global Definitions *****************************/
 
+/*	A thread is used as a communicator between the user's app and the
+ *	Watch Dog program.	*/
 static pthread_t g_wd_thread = 0;
 
 /************************* Functions  Implementations *************************/	
@@ -69,7 +71,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	
 	/* copy argv and attach wd_app_name to the beginning */
 	argv_for_wd = (char **)(calloc(argc + 2, sizeof(char *)));
-	ReturnIfError(NULL == argv_for_wd, "Failed to create argv array\n", -1);
+	ReturnIfError(NULL == argv_for_wd, "[app] Failed to create argv array\n", -1);
 	
 	argv_for_wd[0] = "./watchdog";
 	
@@ -87,11 +89,12 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 		/*	if no - create a new process and run WD and get its pid */
 	if (getenv("WD_IS_ON"))
 	{
+		printf("WD IS ON\n");
 		g_process_to_signal = getppid();
 	}
 	else
 	{
-		printf(GREEN "[app] WD DOES NOT EXIST - LAUNCHING\n" NORMAL );
+		printf(GREEN "\n[app] WD DOES NOT EXIST - CREATING WD . . .\n" NORMAL );
 		StartWDProcess(info);
 	}
 	

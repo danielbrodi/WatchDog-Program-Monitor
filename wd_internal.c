@@ -10,21 +10,20 @@
 
 /******************************** Header Files ********************************/
 
-#define _POSIX_C_SOURCE 199309L /*	sigaction struct 				*/
+#define _POSIX_C_SOURCE 199309L /*	sigaction struct 		*/
 
-#include <assert.h>
+#include <assert.h>		/*	assert							*/
 #include <errno.h>		/*	errno							*/
-#include <stdio.h>      /*  puts							*/
-#include <stdlib.h>     /*  exit                            */
-#include <time.h>
+#include <stdio.h>      /*  printf							*/
+#include <time.h>		/*	time_t, time()					*/
 
 #include <signal.h>		/*	signals functions				*/
 #include <unistd.h>     /*  fork, getppid, sleep            */
 #include <sys/types.h>	/*	pid_t							*/
 
-#include "utils.h"		/*	prints colors, UNUSED			*/
+#include "utils.h"		/*	print colors, UNUSED, ExitIfError, ReturnIfError */
 #include "wd_internal.h"
-#include "scheduler.h"
+#include "scheduler.h"	/*	scheduler's API functions */
 
 /***************************** Global Definitions *****************************/
 
@@ -39,30 +38,49 @@ static volatile pid_t g_process_to_signal = 0;
 
 /**************************** Forward Declarations ****************************/
 
+/*	Creates a new process and runs through it the Watch Dog program or the
+ *	user's main program.
+ *	The decesion is made by which of the two got terminated and needs to restart.
+*/
 int StartWDProcess(info_ty *info);
 
+/*	Manages the Watch Dog operation of scheduling sending signals and checking
+ *	whether the other side is responding or not.
+ *	Uses a scheduler's program to synchornize the tasks.	*/
 void *WDThreadSchedulerIMP(void *info);
-
 int WDManageSchedulerIMP(info_ty *info);
 
+/*	Scheduler's task which sends SIGUSR1 to the needed process each preiod of
+ *	time */
 oper_ret_ty OnIntervalSendSignalIMP(void *unused);
 
+/*	Scheduler's task which checks if the maximum number of missed signals has
+ *	been reached. If too many signals are missed - restarts the other program */
 oper_ret_ty OnIntervalCheckIfMissIMP(void *info);
 
+/*	Scheduler's task which regulary checks if a DNR request has been made and
+ *	stops the WatchDog if needed */
 oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop);
 
-void handler_siguser2(int sig_id);
-
-void handler_siguser1(int sig_id);
-
+/*	Sets a user defined function as a signal handler of a given signal	*/
 void SetSignalHandler(int signal, void(*handler_func)(int));
 
+/*	Signal handler for SIGUSR1 - resets the missed signals counter */
+void handler_siguser1(int sig_id);
+
+/*	Signal handler for SIGUSR2 - raises the DNR flag	*/
+void handler_siguser2(int sig_id);
+
+/*	Checks if a process is alive and returns 1(alive) or 0(not alive).	*/
 int IsProcessAliveIMP(pid_t process_to_check);
 
+/*	Terminates a process and returns 0 if successfully terminated.
+ *	A failure to terminate the process returns 1	*/ 
 int TerminateProcessIMP(pid_t process_to_kill);
 
 /************************* Functions  Implementations *************************/
 
+/*	for improved readabillity	*/
 enum {CHILD = 0};
 
 /*	WDPCreate	function - start */
@@ -78,10 +96,12 @@ int StartWDProcess(info_ty *info)
 	
 	if (info->i_am_wd)
 	{
+		printf(CYAN "I AM WD ->\n");
 		program_to_run = "user_app";
 	}
 	else
 	{
+		printf(CYAN "I AM USER APP ->\n");
 		program_to_run = "watchdog";
 	}
 	
@@ -93,7 +113,7 @@ int StartWDProcess(info_ty *info)
 	
 	/*---------------------------------*/
 	/*	if child: */
-	if (0 == pid)
+	if (CHILD == pid)
 	{	
 		/*	execv needed program	*/
 		argv_to_run = info->argv_for_wd;

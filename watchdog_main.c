@@ -1,5 +1,5 @@
 /*********************************FILE__HEADER*********************************\
-* File:					watchdog.c
+* File:					watchdog_main.c
 * Author:				Daniel Brodsky				 		  												  								
 * Date:					12-July-2021
 * Pseudocode Reviewer:	Eran Barnoy
@@ -10,24 +10,20 @@
 
 /******************************** Header Files ********************************/
 
-#define _XOPEN_SOURCE
+#define _XOPEN_SOURCE		/*	putenv	*/
 
-#include <assert.h>		/*	assert	*/	
-#include <stddef.h>		/*	size_t, NULL	*/
-#include <stdio.h>		/*	sprintf			*/
-#include <stdlib.h>		/*	setenv, getenv	*/
-#include <string.h>
+#include <assert.h>			/*	assert	*/	
+#include <stddef.h>			/*	size_t, NULL	*/
+#include <stdio.h>			/*	sprintf			*/
+#include <stdlib.h>			/*	putenv, getenv	*/
+#include <string.h>			/*	atol			*/
 
-#include <pthread.h>	/*	pthread_create, pthread_t	*/
-#include <signal.h>
-#include <sys/types.h>	/*	pid_t			*/
+#include <pthread.h>		/*	pthread_create, pthread_t	*/
+#include <signal.h>			/*	signals functions */
+#include <sys/types.h>		/*	pid_t			*/
 
-#include "utils.h"
-#include "wd_internal.h"
-
-/***************************** Global Definitions *****************************/
-
-/**************************** Forward Declarations ****************************/
+#include "utils.h"			/*	ReturnIfError, print colors */
+#include "wd_internal.h"	/*	WDManageSchedulerIMP, SetSignalHandler,info_ty*/
 
 /************************* Functions  Implementations *************************/
 
@@ -47,7 +43,7 @@ int main(int argc, char *argv[])
 	printf(BLUE "[wd] WD IS RUNNING!\n" NORMAL);
 	/* copy argv and attach wd_app_name to the beginning */
 	argv_to_run = (char **)(calloc(argc, sizeof(char *)));
-	ReturnIfError(NULL == argv_to_run, "Failed to create argv array\n", -1);
+	ReturnIfError(NULL == argv_to_run, "[wd] Failed to create argv array\n", -1);
 	
 	memcpy(argv_to_run + 1, argv, argc - 1);
 	
@@ -65,7 +61,7 @@ int main(int argc, char *argv[])
 	SetSignalHandler(SIGUSR1, handler_siguser1);
 	SetSignalHandler(SIGUSR2, handler_siguser2);
 	
-	/* WDManageScheduler for parent id */
+	/* WDManageScheduler and start watching the app */
 	WDManageSchedulerIMP(info);
 	
 	/*	return */
