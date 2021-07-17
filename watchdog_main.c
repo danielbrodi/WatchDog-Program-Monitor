@@ -10,21 +10,21 @@
 
 /******************************** Header Files ********************************/
 
-#define _POSIX_SOURCE
 #define _XOPEN_SOURCE
 
 #include <assert.h>		/*	assert	*/	
-#include <pthread.h>	/*	pthread_create, pthread_t	*/
-#include <signal.h>
 #include <stddef.h>		/*	size_t, NULL	*/
 #include <stdio.h>		/*	sprintf			*/
 #include <stdlib.h>		/*	setenv, getenv	*/
 #include <string.h>
 
+#include <pthread.h>	/*	pthread_create, pthread_t	*/
+#include <signal.h>
 #include <sys/types.h>	/*	pid_t			*/
 
 #include "utils.h"
 #include "wd_internal.h"
+
 /***************************** Global Definitions *****************************/
 
 /**************************** Forward Declarations ****************************/
@@ -44,21 +44,19 @@ int main(int argc, char *argv[])
 	/*	add itself to env variable to indicate there is a running watch dog */
 	/*	handle errors	*/
 	putenv("WD_IS_ON=1");
-	
+	printf(BLUE "[wd] WD IS RUNNING!\n" NORMAL);
 	/* copy argv and attach wd_app_name to the beginning */
-	argv_to_run = (char **)malloc(argc * sizeof(char *));
+	argv_to_run = (char **)(calloc(argc, sizeof(char *)));
 	ReturnIfError(NULL == argv_to_run, "Failed to create argv array\n", -1);
 	
-	argv_to_run[0] = "./watchdog";
-	
-	memcpy(argv_to_run + 1, argv, argc);
+	memcpy(argv_to_run + 1, argv, argc - 1);
 	
 	signal_intervals = atol(getenv("SIGNAL_INTERVAL"));
 	num_allowed_misses = atol(getenv("NUM_ALLOWED_FAILURES"));
 	
 	/*	set info struct to be transfered to the scheduler function with all
 	 *	the needede information	*/
-	wd_info.argv_for_wd = argv;
+	wd_info.argv_for_wd = argv + 1;
 	wd_info.num_allowed_misses = num_allowed_misses;
 	wd_info.signal_intervals = signal_intervals;
 	wd_info.i_am_wd = 1;

@@ -10,15 +10,15 @@
 
 /******************************** Header Files ********************************/
 
-#define _POSIX_SOURCE	/*	sigaction struct 				*/
+#define _POSIX_C_SOURCE 199309L /*	sigaction struct 				*/
 
 #include <assert.h>
 #include <errno.h>		/*	errno							*/
-#include <signal.h>		/*	signals functions				*/
 #include <stdio.h>      /*  puts							*/
 #include <stdlib.h>     /*  exit                            */
 #include <time.h>
 
+#include <signal.h>		/*	signals functions				*/
 #include <unistd.h>     /*  fork, getppid, sleep            */
 #include <sys/types.h>	/*	pid_t							*/
 
@@ -78,13 +78,11 @@ int StartWDProcess(info_ty *info)
 	
 	if (info->i_am_wd)
 	{
-		program_to_run = "./userapp";
-		argv_to_run = info->argv_for_wd + 1;
+		program_to_run = "user_app";
 	}
 	else
 	{
-		program_to_run = "./watchdog";
-		argv_to_run = info->argv_for_wd;
+		program_to_run = "watchdog";
 	}
 	
 	/*	fork: 	*/
@@ -95,10 +93,11 @@ int StartWDProcess(info_ty *info)
 	
 	/*---------------------------------*/
 	/*	if child: */
-	if (CHILD == pid)
+	if (0 == pid)
 	{	
 		/*	execv needed program	*/
-		execvp(program_to_run, argv_to_run);
+		argv_to_run = info->argv_for_wd;
+		execv(program_to_run, argv_to_run);
 		
 		/*	return (-1) if any errors */
 		ReturnIfError(1, "Failed to execute the WatchDog program\n", FAILURE);
@@ -109,9 +108,7 @@ int StartWDProcess(info_ty *info)
 	/*---------------------------------*/
 	/*	if parent:	*/
 	else
-	{
-		sleep(1);
-		
+	{	
 		/*	return child's pid */
 		g_process_to_signal = pid;
 		

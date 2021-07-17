@@ -15,24 +15,23 @@
 
 /******************************** Header Files ********************************/
 
-#define _POSIX_SOURCE
 #define _XOPEN_SOURCE
 
 #include <assert.h>		/*	assert	*/	
-#include <pthread.h>	/*	pthread_create, pthread_t	*/
-#include <signal.h>
 #include <stddef.h>		/*	size_t, NULL	*/
 #include <stdio.h>
 #include <stdlib.h>		/*	setenv, getenv	*/
 #include <string.h>
 
+#include <pthread.h>	/*	pthread_create, pthread_t	*/
+#include <signal.h>
 #include <unistd.h>
 #include <sys/types.h>	/*	pid_t			*/
 
+#include "utils.h"
 #include "wd_internal.h"
 #include "wd_internal.c"
 #include "watchdog.h"
-#include "utils.h"
 
 /***************************** Global Definitions *****************************/
 
@@ -69,7 +68,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	putenv(env_num_allowed_misses);
 	
 	/* copy argv and attach wd_app_name to the beginning */
-	argv_for_wd = (char **)malloc((argc + 2) * sizeof(char *));
+	argv_for_wd = (char **)(calloc(argc + 2, sizeof(char *)));
 	ReturnIfError(NULL == argv_for_wd, "Failed to create argv array\n", -1);
 	
 	argv_for_wd[0] = "./watchdog";
@@ -92,17 +91,19 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	}
 	else
 	{
+		printf(GREEN "[app] WD DOES NOT EXIST - LAUNCHING\n" NORMAL );
 		StartWDProcess(info);
 	}
 	
+	printf(CYAN "[app] P TO SIGNAL: %d\n" NORMAL, g_process_to_signal);
 	ReturnIfError(g_process_to_signal <= 0, 
-								"Failed to create watch dog process!\n", -1);
+								"[app] Failed to create watch dog process!\n", -1);
 	
 	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */
 	 /*	handle errors*/
 	ReturnIfError(pthread_create(&g_wd_thread, NULL, WDThreadSchedulerIMP,
-								info),"Failed to create a WD thread\n", -1);
+								info),"[app] Failed to create a WD thread\n", -1);
 										
 	/*	return success */
 	return;

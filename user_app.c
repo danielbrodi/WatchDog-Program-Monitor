@@ -10,7 +10,9 @@
 
 #include <stdio.h>	/*	printf */
 
-#include "watchdog.c"
+#include <unistd.h>
+
+#include "watchdog.h"
 
 int main(int argc, char *argv[])
 {

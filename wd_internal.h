@@ -11,7 +11,6 @@
 
 #include "scheduler.h"
 
-
 /*	a struct that contains all relevant and needed data to start a WD program */
 typedef struct info
 {
