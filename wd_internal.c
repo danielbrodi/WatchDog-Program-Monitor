@@ -120,6 +120,8 @@ int StartWDProcess(info_ty *info)
 	/*	end parent */
 	}
 	/*---------------------------------*/
+	
+	return (FAILURE);
 }
 /******************************************************************************/
 /*	manages WD scheduler - sends and checks for signals */
@@ -188,7 +190,7 @@ oper_ret_ty OnIntervalSendSignalIMP(void *unused)
 /******************************************************************************/
 oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 {
-	size_t num_allowed_misses = 0;
+	sig_atomic_t num_allowed_misses = 0;
 	
 	assert(info);
 	
@@ -319,6 +321,8 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 /******************************************************************************/
 void handler_siguser1(int sig_id)
 {
+	UNUSED(sig_id);
+	
 	/*	reset counter of missed signals by XOR counter with itself */
 	__sync_fetch_and_xor(&g_counter_missed_signals, g_counter_missed_signals);
 	
@@ -327,6 +331,8 @@ void handler_siguser1(int sig_id)
 /******************************************************************************/
 void handler_siguser2(int sig_id)
 {
+	UNUSED(sig_id);
+	
 	/*	set DNR flag as 1 */
 	__sync_fetch_and_add(&g_scheduler_should_stop, 1);
 	
