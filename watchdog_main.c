@@ -36,7 +36,8 @@ int main(int argc, char *argv[])
 	size_t num_allowed_misses = 0;
 	
 	info_ty *wd_info = (info_ty *)malloc(sizeof(info_ty));
-	
+	ExitIfError(NULL == wd_info, "Failed to allocate memory for info struct!\n"
+																		,-1);
 	assert(argv);
 	
 	UNUSED(argc);	
@@ -44,7 +45,7 @@ int main(int argc, char *argv[])
 	/*	add itself to env variable to indicate there is a running watch dog */
 	/*	handle errors	*/
 	putenv("WD_IS_ON=1");
-	printf(GREEN "%120s[wd %d] WD STARTED RUNNING\n", "", getpid());
+	printf(GREEN "%100s[wd %d] WD STARTED RUNNING\n", "", getpid());
 	
 	signal_intervals = atol(getenv("SIGNAL_INTERVAL"));
 	num_allowed_misses = atol(getenv("NUM_ALLOWED_FAILURES"));
@@ -62,7 +63,7 @@ int main(int argc, char *argv[])
 	SetSignalHandler(SIGUSR1, handler_ResetErrorsCounter);
 	SetSignalHandler(SIGUSR2, handler_SetOnDNR);
 	
-	kill(getppid(), SIGUSR1);
+	kill(getppid(), SIGCONT);
 	
 	/* WDManageScheduler and start watching the app */
 	WDManageSchedulerIMP(wd_info);

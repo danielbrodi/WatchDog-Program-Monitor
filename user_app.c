@@ -18,17 +18,17 @@
 
 int main(int argc, char *argv[])
 {
-	sigset_t signal_set;
+/*	sigset_t signal_set;*/
 	
 	int num = 0;
 	
-	size_t num_allowed_fails = 100;
+	size_t num_allowed_fails = 3;
 	
-	size_t num_seconds_between_checks = 1;
+	size_t num_seconds_between_checks = 2;
 	
-	time_t start_time = time(0);
-	time_t time_to_wait = 10; /* in seconds */
-	time_t end_time = start_time + time_to_wait;
+/*	time_t start_time = time(0);*/
+/*	time_t time_to_wait = 10; */ /*	in seconds */
+/*	time_t end_time = start_time + time_to_wait;*/
 	
 /*	sigemptyset(&signal_set);*/
 /*	sigaddset(&signal_set, SIGUSR1);*/
@@ -39,16 +39,20 @@ int main(int argc, char *argv[])
 	
 	KeepMeAlive(argc, argv, num_seconds_between_checks, num_allowed_fails);
 	
-	while (1)
+	while(1)
 	{
-		printf("\n%60s|Program[%d] is running . . .|\n"
-								"%60s|Waiting for a signal . . .%5s|\n", "",getpid(), "", "");
+		if (num > 5)
+		{
+			break;
+		}
+		++num;
+	
+		printf("\n%60s|Program[pid:%d] is running . . .|\n"
+				"%60s|Waiting for a signal . . .%9s|\n", "",getpid(), "", "");
 		sleep(1);
 	}
 	
-	printf(YELLOW "\n%60s|--DONE USER APP--\n" NORMAL, "");
-	
-	raise(SIGTERM);
+	printf(WHITE "\n%60s|*USER APP IS DONE*: EXITING . . .|\n" NORMAL, "");
 	
 	/* dnr */
 	/*	sigprocmask(SIG_UNBLOCK, &signal_set, NULL); */

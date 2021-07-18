@@ -107,7 +107,8 @@ int StartWDProcess(info_ty *info)
 	 *	program. */
 	if (info->i_am_wd)
 	{
-		printf(CYAN "%120s[wd %d] Trying to Fork and run User_APP\n" NORMAL, "", getpid());	
+		printf(CYAN "%120s[wd %d] Trying to Fork and run User_APP\n" NORMAL, "", 
+																	getpid());	
 		program_to_run = "./user_app";
 	}
 	else
@@ -140,6 +141,7 @@ int StartWDProcess(info_ty *info)
 	/*	if parent:	*/
 	else
 	{
+		/*	updates communicator process id as the child's pid */
 		SetProcessToSignalIMP(pid);
 		
 		return (SUCCESS);
@@ -184,14 +186,6 @@ int WDManageSchedulerIMP(info_ty *info)
 	wd_scheduler = SchedulerCreate();
 	ReturnIfError(!wd_scheduler, "Failed to create a WatchDog Scheduler!\n", 
 																	FAILURE);
-	if (((info_ty *)info)->i_am_wd)
-	{
-		printf(GREEN "%120s wd %d ", "", getpid());
-	}
-	else
-	{
-		printf(GREEN "\n app %d ", getpid());
-	}
 												
 	/*	add a scheduler task that sends signals */
 	SchedulerAdd(wd_scheduler, OnIntervalSendSignalIMP, signal_intervals, info);
@@ -206,8 +200,6 @@ int WDManageSchedulerIMP(info_ty *info)
 	/*	scheduler run and check its return status */
 	ret_status = SchedulerRun(wd_scheduler);
 	
-	printf("RET STATUS : %d\n", ret_status);
-	
 	/*	scheduler destroy */
 	SchedulerDestroy(wd_scheduler);
 	
@@ -220,19 +212,29 @@ oper_ret_ty OnIntervalSendSignalIMP(void *info)
 	/*	send SIGUSR1 to process_to_signal and handle errors if any */
 	if (kill(g_process_to_signal, SIGUSR1))
 	{
-		return (OPER_FAILURE);
-	}
-	
-	if (((info_ty *)info)->i_am_wd)
-	{
-		printf(GREEN "%120sWatchDog[pid:%d] ", "", getpid());
+		if (ESRCH == errno)
+		{
+			fprintf(stderr, "%60s|[pid:%d] the target process" 
+											" does not exist|", "", getpid());
+		}
+		else if (EPERM == errno)
+		{
+			fprintf(stderr, "%60s[pid:%d] has no permission to send SIGUSR1 signal",
+																"", getpid());
+		}
 	}
 	else
 	{
-		printf(GREEN "\nUserApp[pid:%d] ", getpid());
-	}
-	printf("Sending signal to [pid:%d]\n" NORMAL, g_process_to_signal);	
-		
+		if (((info_ty *)info)->i_am_wd)
+		{
+			printf(GREEN "%120sWatchDog[pid:%d] ", "", getpid());
+		}
+		else
+		{
+			printf(GREEN "\nUserApp[pid:%d] ", getpid());
+		}
+		printf("Sending signal to [pid:%d]\n" NORMAL, g_process_to_signal);	
+	}	
 	/*	keep signaling */
 	return (NOT_DONE);
 }
@@ -274,6 +276,7 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 			return (OPER_FAILURE);
 		}
 		
+		/*	resets the missed signals counter	*/
 		__sync_fetch_and_xor(&g_counter_missed_signals, g_counter_missed_signals);
 	}
 	/*	end if reached num_allowed_fails */
@@ -284,6 +287,8 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 /******************************************************************************/
 oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop)
 {
+	printf(CYAN "%60s|Checking DNR = %d|\n" NORMAL, "",g_scheduler_should_stop);
+
 	assert(scheduler_to_stop);
 	
 	/*	if DNR flag is on - stop the scheduler	*/
@@ -393,16 +398,19 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 void handler_ResetErrorsCounter(int sig_id)
 {
 	UNUSED(sig_id);
-	printf(BLUE "%60s %d received signal after %d misses\n" NORMAL, "", getpid(), g_counter_missed_signals);
+	
+	printf(BLUE "%60s|[pid:%d] received SIGUSR1 signal|\n" NORMAL, "", getpid());
+	
 	/*	reset counter of missed signals by XOR counter with itself */
 	__sync_fetch_and_xor(&g_counter_missed_signals, g_counter_missed_signals);
+	
 	return;
 }
 /******************************************************************************/
 void handler_SetOnDNR(int sig_id)
 {
 	UNUSED(sig_id);
-	printf(YELLOW "DNR IS ON\n");
+	
 	/*	set DNR flag as 1 */
 	__sync_fetch_and_add(&g_scheduler_should_stop, 1);
 	

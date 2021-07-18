@@ -44,14 +44,16 @@ static pthread_t g_wd_thread = 0;
 void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 													size_t num_allowed_misses)
 {
-	info_ty *wd_info = (info_ty *)malloc(sizeof(info_ty));
-	
 	char **argv_for_wd = NULL;
 	
 	/*	stores values of num_allowed_misses and signal_intervals as env vars */
 	char env_num_allowed_misses[120] = {'\0'};
 	char env_signal_intervals[120] = {'\0'};
 	
+	info_ty *wd_info = (info_ty *)malloc(sizeof(info_ty));
+	ExitIfError(NULL == wd_info, "Failed to allocate memory for info struct!\n"
+																		,-1);	
+		
 	/*	asserts */
 	assert(signal_intervals);
 	assert(num_allowed_misses);
@@ -101,6 +103,8 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	printf(YELLOW "[app %d] WatchDog PID: %d\n" NORMAL, getpid(), GetProcessToSignalIMP());
 	ReturnIfError(GetProcessToSignalIMP() <= 0, 
 					"[app] PID of new created WD process is invalid!\n", -1);
+	
+	raise(SIGSTOP);
 	
 	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */
