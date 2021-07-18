@@ -48,10 +48,10 @@ oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop);
 void SetSignalHandler(int signal, void(*handler_func)(int));
 
 /*	Signal handler for SIGUSR1 - resets the missed signals counter */
-void handler_siguser1(int sig_id);
+void handler_ResetErrorsCounter(int sig_id);
 
 /*	Signal handler for SIGUSR2 - raises the DNR flag	*/
-void handler_siguser2(int sig_id);
+void handler_SetOnDNR(int sig_id);
 
 /*	Checks if a process is alive and returns 1(alive) or 0(not alive).	*/
 int IsProcessAliveIMP(pid_t process_to_check);
@@ -59,5 +59,10 @@ int IsProcessAliveIMP(pid_t process_to_check);
 /*	Terminates a process and returns 0 if successfully terminated.
  *	A failure to terminate the process returns 1	*/ 
 int TerminateProcessIMP(pid_t process_to_kill);
+
+/*	Sets a process to be signaled */
+void SetProcessToSignalIMP(pid_t pid);
+
+pid_t GetProcessToSignal();
 
 #endif	/* __WD_INTERNAL_H__	*/

@@ -10,7 +10,8 @@
 
 /******************************** Header Files ********************************/
 
-#define _POSIX_C_SOURCE 199309L /*	sigaction struct 		*/
+#define _POSIX_C_SOURCE 199506L /*	sigaction struct 		*/
+#define _XOPEN_SOURCE
 
 #include <assert.h>		/*	assert							*/
 #include <errno.h>		/*	errno							*/
@@ -41,6 +42,7 @@ static volatile pid_t g_process_to_signal = 0;
 /*	Creates a new process and runs through it the Watch Dog program or the
  *	user's main program.
  *	The decesion is made by which of the two got terminated and needs to restart.
+ *	Returns '0' if process was started successfully, otherwise returns '1'.
 */
 int StartWDProcess(info_ty *info);
 
@@ -66,10 +68,10 @@ oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop);
 void SetSignalHandler(int signal, void(*handler_func)(int));
 
 /*	Signal handler for SIGUSR1 - resets the missed signals counter */
-void handler_siguser1(int sig_id);
+void handler_ResetErrorsCounter(int sig_id);
 
 /*	Signal handler for SIGUSR2 - raises the DNR flag	*/
-void handler_siguser2(int sig_id);
+void handler_SetOnDNR(int sig_id);
 
 /*	Checks if a process is alive and returns 1(alive) or 0(not alive).	*/
 int IsProcessAliveIMP(pid_t process_to_check);
@@ -79,7 +81,9 @@ int IsProcessAliveIMP(pid_t process_to_check);
 int TerminateProcessIMP(pid_t process_to_kill);
 
 /*	Sets a process to be signaled */
-void SetProcessToSignal(pid_t pid);
+void SetProcessToSignalIMP(pid_t pid);
+
+pid_t GetProcessToSignal();
 
 /************************* Functions  Implementations *************************/
 
@@ -101,12 +105,12 @@ int StartWDProcess(info_ty *info)
 	 *	program. */
 	if (info->i_am_wd)
 	{
-		printf(CYAN "I AM WD ->\n");	
+		printf(CYAN "I AM WD -> Trying to Fork and run User_APP\n" NORMAL);	
 		program_to_run = "./user_app";
 	}
 	else
 	{
-		printf(CYAN "I AM USER APP ->\n");
+		printf(CYAN "I AM USER APP -> Trying to Fork and Run WD\n" NORMAL);
 		program_to_run = "./watchdog";
 	}
 	
@@ -124,7 +128,7 @@ int StartWDProcess(info_ty *info)
 		argv_to_run = info->argv_for_wd;
 		execvp(program_to_run, argv_to_run);
 		
-		/*	return (-1) if any errors */
+		/*	return (1) if any errors */
 		ReturnIfError(1, "Failed to execute the WatchDog program\n", FAILURE);
 	}
 	/*	end child 		*/
@@ -134,8 +138,8 @@ int StartWDProcess(info_ty *info)
 	/*	if parent:	*/
 	else
 	{	
-		/*	return child's pid */
-		g_process_to_signal = pid;
+		/*	set process to signal as child's pid */
+		SetProcessToSignalIMP(pid);
 		
 		return (SUCCESS);
 				
@@ -206,7 +210,8 @@ oper_ret_ty OnIntervalSendSignalIMP(void *unused)
 		return (OPER_FAILURE);
 	}
 	
-	printf(GREEN "Signal Sent from %d to %d\n", getpid(), g_process_to_signal);
+	printf(GREEN "\nSignal Sent from %d to %d\n" NORMAL, getpid(), 
+														g_process_to_signal);
 	
 	/*	keep signaling */
 	return (NOT_DONE);
@@ -234,7 +239,7 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 			return (OPER_FAILURE);
 		}
 		
-		if (-1 == StartWDProcess(info))
+		if (FAILURE == StartWDProcess(info))
 		{
 			return (OPER_FAILURE);
 		}
@@ -343,7 +348,7 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 				"Error: Could not set register a sigaction handler\n", 1);
 }
 /******************************************************************************/
-void handler_siguser1(int sig_id)
+void handler_ResetErrorsCounter(int sig_id)
 {
 	UNUSED(sig_id);
 	
@@ -353,7 +358,7 @@ void handler_siguser1(int sig_id)
 	return;
 }
 /******************************************************************************/
-void handler_siguser2(int sig_id)
+void handler_SetOnDNR(int sig_id)
 {
 	UNUSED(sig_id);
 	
@@ -363,10 +368,15 @@ void handler_siguser2(int sig_id)
 	return;
 }
 /******************************************************************************/
-void SetProcessToSignal(pid_t pid)
+void SetProcessToSignalIMP(pid_t pid)
 {
 	assert(pid);
 	
-	g_process_to_signal = pid;
+	__sync_val_compare_and_swap(&g_process_to_signal, g_process_to_signal, pid);
+}
+/******************************************************************************/
+pid_t GetProcessToSignal()
+{
+	return (g_process_to_signal);
 }
 /******************************************************************************/

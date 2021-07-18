@@ -18,9 +18,11 @@
 #include <stdlib.h>			/*	putenv, getenv	*/
 #include <string.h>			/*	atol			*/
 
+
 #include <pthread.h>		/*	pthread_create, pthread_t	*/
 #include <signal.h>			/*	signals functions */
 #include <sys/types.h>		/*	pid_t			*/
+#include <unistd.h>			/*	getppid			*/
 
 #include "utils.h"			/*	ReturnIfError, print colors */
 #include "wd_internal.h"	/*	WDManageSchedulerIMP, SetSignalHandler,info_ty*/
@@ -29,17 +31,20 @@
 
 /*	start main function */
 int main(int argc, char *argv[])
-{
+{	
 	size_t signal_intervals = 0;
 	size_t num_allowed_misses = 0;
 	
 	info_ty wd_info = {0};
 	info_ty *info = &wd_info;
 	
+	assert(argv);
+	UNUSED(argc);	
+		
 	/*	add itself to env variable to indicate there is a running watch dog */
 	/*	handle errors	*/
 	putenv("WD_IS_ON=1");
-	printf(BLUE "[wd] WD IS RUNNING! " NORMAL "\n");
+	printf(GREEN "[wd] WD STARTED RUNNING " NORMAL "\n");
 	
 	signal_intervals = atol(getenv("SIGNAL_INTERVAL"));
 	num_allowed_misses = atol(getenv("NUM_ALLOWED_FAILURES"));
@@ -51,11 +56,13 @@ int main(int argc, char *argv[])
 	wd_info.signal_intervals = signal_intervals;
 	wd_info.i_am_wd = 1;
 	
-	SetProcessToSignal(getppid());
+	SetProcessToSignalIMP(getppid());
 	
 	/*	set signal handlers to deal SIGUSR1 &  SIGUSR2 */
-	SetSignalHandler(SIGUSR1, handler_siguser1);
-	SetSignalHandler(SIGUSR2, handler_siguser2);
+	SetSignalHandler(SIGUSR1, handler_ResetErrorsCounter);
+	SetSignalHandler(SIGUSR2, handler_SetOnDNR);
+	
+	kill(getppid(), SIGCONT);
 	
 	/* WDManageScheduler and start watching the app */
 	WDManageSchedulerIMP(info);

@@ -15,7 +15,8 @@
 
 /******************************** Header Files ********************************/
 
-#define _XOPEN_SOURCE	/*	putenv	*/
+#define _POSIX_C_SOURCE 199506L	/*	sigaction	*/
+#define _DEFAULT_SOURCE	/*	putenv	*/
 
 #include <assert.h>		/*	assert	*/	
 #include <stddef.h>		/*	size_t, NULL	*/
@@ -30,7 +31,6 @@
 
 #include "utils.h"		/*	ReturnIfError	*/
 #include "wd_internal.h"
-#include "wd_internal.c"
 #include "watchdog.h"
 
 /***************************** Global Definitions *****************************/
@@ -59,7 +59,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	assert(num_allowed_misses);
 	
 	/*	register SIGUSR1 signal handler to manage received signals status */
-	SetSignalHandler(SIGUSR1, handler_siguser1);
+	SetSignalHandler(SIGUSR1, handler_ResetErrorsCounter);
 	
 	/*	set ENV variables of num_allowed_misses and signal_intervals */
 	sprintf(env_signal_intervals, "SIGNAL_INTERVAL=%ld", signal_intervals);
@@ -90,26 +90,26 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 		/*	if no - create a new process and run WD and get its pid */
 	if (getenv("WD_IS_ON"))
 	{
-		printf("WD IS ON\n");
-		g_process_to_signal = getppid();
+		printf(RED "[app] WD already exists, no need to create a new one!\n" NORMAL);
+		SetProcessToSignalIMP(getppid());
 	}
 	else
 	{
-		printf(GREEN "\n[app] WD DOES NOT EXIST - CREATING WD . . .\n" NORMAL );
+		printf(RED "\n[app] WD DOES NOT EXIST - CREATING WD . . .\n" NORMAL );
 		StartWDProcess(info);
 	}
 	
-	printf(CYAN "[app] WatchDog PID: %d\n" NORMAL, g_process_to_signal);
-	ReturnIfError(g_process_to_signal <= 0, 
+	printf(CYAN "[app] WatchDog PID: %d\n" NORMAL, GetProcessToSignal());
+	ReturnIfError(GetProcessToSignal() <= 0, 
 								"[app] Failed to create watch dog process!\n", -1);
-	
-	sleep(3);
 	
 	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */
 	 /*	handle errors*/
 	ReturnIfError(pthread_create(&g_wd_thread, NULL, WDThreadSchedulerIMP,
 								info),"[app] Failed to create a WD thread\n", -1);
+														
+	raise(SIGSTOP);
 										
 	/*	return success */
 	return;
@@ -119,18 +119,18 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 int DNR(void)
 {
 	/*	set DNR flag as 1 */
-	__sync_fetch_and_add(&g_scheduler_should_stop, 1);
+	handler_SetOnDNR(0);
 	
 	/* verify the watch dog is indeed terminated	*/
-	if (1 == IsProcessAliveIMP(g_process_to_signal))
+	if (1 == IsProcessAliveIMP(GetProcessToSignal()))
 	{
-		fprintf(stderr, "Failed to destroy the WD\n");
+		fprintf(stderr, "[app] Failed to destroy the WD\n");
 		return (FAILURE);
 	}
 
 	if (pthread_join(g_wd_thread, NULL))
 	{
-		fprintf(stderr, "Failed to finish WD thread\n");
+		fprintf(stderr, "[app] Failed to finish WD thread\n");
 		return (FAILURE);
 	}
 	
