@@ -265,6 +265,7 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 	/*	if num_missed_signals equals num_allowed_fails : */
 	if (num_allowed_misses == g_counter_missed_signals)
 	{
+		printf(CYAN "%60s|-|Restarting process %d|-|\n" NORMAL, "", g_process_to_signal);
 		/*	restart process_to_watch using its original argv parameters  */
 		if (FAILURE == TerminateProcessIMP(g_process_to_signal))
 		{
@@ -287,8 +288,6 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 /******************************************************************************/
 oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop)
 {
-	printf(CYAN "%60s|Checking DNR = %d|\n" NORMAL, "",g_scheduler_should_stop);
-
 	assert(scheduler_to_stop);
 	
 	/*	if DNR flag is on - stop the scheduler	*/
@@ -305,7 +304,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 {    
 	assert(process_to_kill);
 	
-	printf(YELLOW "%60sTrying to kill %d\n", "", process_to_kill);
+	printf(YELLOW "%60sTrying to kill %d\n:", "", process_to_kill);
 	
 	/*---------------------------------------------------------*/
 	/*	check if process is already does not exist */
@@ -371,7 +370,7 @@ int IsProcessAliveIMP(pid_t process_to_check)
 		return (0);
 	}
 	
-	printf(WHITE "%60s%d is alive!\n", "", process_to_check);
+	printf(WHITE "%60s%d is still alive!\n", "", process_to_check);
 	return (1);
 }
 /******************************************************************************/
