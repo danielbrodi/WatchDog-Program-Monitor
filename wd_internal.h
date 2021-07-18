@@ -16,7 +16,7 @@ typedef struct info
 {
 	char **argv_for_wd;
 	size_t num_allowed_misses;
-	time_t signal_intervals;	
+	size_t signal_intervals;	
 	int i_am_wd; /*	0 if the caller is the user app, 1 if its the WD program */
 }info_ty;
 

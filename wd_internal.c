@@ -17,6 +17,7 @@
 #include <errno.h>		/*	errno							*/
 #include <stdio.h>      /*  printf							*/
 #include <time.h>		/*	time_t, time()					*/
+#include <string.h>
 
 #include <signal.h>		/*	signals functions				*/
 #include <unistd.h>     /*  fork, getppid, sleep            */
@@ -157,6 +158,8 @@ void *WDThreadSchedulerIMP(void *info)
 	
 	WDManageSchedulerIMP(info);
 	
+	free(info);
+	
 	return (NULL);
 }
 /*----------------------------------------------------------------------------*/
@@ -181,7 +184,15 @@ int WDManageSchedulerIMP(info_ty *info)
 	wd_scheduler = SchedulerCreate();
 	ReturnIfError(!wd_scheduler, "Failed to create a WatchDog Scheduler!\n", 
 																	FAILURE);
-																	
+	if (((info_ty *)info)->i_am_wd)
+	{
+		printf(GREEN "%120s wd %d ", "", getpid());
+	}
+	else
+	{
+		printf(GREEN "\n app %d ", getpid());
+	}
+												
 	/*	add a scheduler task that sends signals */
 	SchedulerAdd(wd_scheduler, OnIntervalSendSignalIMP, signal_intervals, info);
 	
@@ -195,6 +206,8 @@ int WDManageSchedulerIMP(info_ty *info)
 	/*	scheduler run and check its return status */
 	ret_status = SchedulerRun(wd_scheduler);
 	
+	printf("RET STATUS : %d\n", ret_status);
+	
 	/*	scheduler destroy */
 	SchedulerDestroy(wd_scheduler);
 	
@@ -204,22 +217,22 @@ int WDManageSchedulerIMP(info_ty *info)
 /******************************************************************************/
 oper_ret_ty OnIntervalSendSignalIMP(void *info)
 {	
-	
 	/*	send SIGUSR1 to process_to_signal and handle errors if any */
 	if (kill(g_process_to_signal, SIGUSR1))
 	{
 		return (OPER_FAILURE);
 	}
+	
 	if (((info_ty *)info)->i_am_wd)
 	{
-		printf(GREEN "%120s wd %d ", "", getpid());
+		printf(GREEN "%120sWatchDog[pid:%d] ", "", getpid());
 	}
 	else
 	{
-		printf(GREEN "\n app %d ", getpid());
+		printf(GREEN "\nUserApp[pid:%d] ", getpid());
 	}
-	printf("Sending signal to %d\n" NORMAL, g_process_to_signal);
-	
+	printf("Sending signal to [pid:%d]\n" NORMAL, g_process_to_signal);	
+		
 	/*	keep signaling */
 	return (NOT_DONE);
 }
@@ -260,6 +273,8 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 		{
 			return (OPER_FAILURE);
 		}
+		
+		__sync_fetch_and_xor(&g_counter_missed_signals, g_counter_missed_signals);
 	}
 	/*	end if reached num_allowed_fails */
 	
@@ -285,6 +300,8 @@ int TerminateProcessIMP(pid_t process_to_kill)
 {    
 	assert(process_to_kill);
 	
+	printf(YELLOW "%60sTrying to kill %d\n", "", process_to_kill);
+	
 	/*---------------------------------------------------------*/
 	/*	check if process is already does not exist */
 	if (!IsProcessAliveIMP(process_to_kill))
@@ -293,7 +310,10 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	}
 	/*---------------------------------------------------------*/
 	/*	terminate process_to_kill	*/
-	kill(process_to_kill, SIGTERM);
+	if (kill(process_to_kill, SIGTERM))
+	{
+		fprintf(stderr, "%s\n", strerror(errno));
+	}
 	
 	if (!IsProcessAliveIMP(process_to_kill))
 	{
@@ -302,7 +322,10 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	
 	/*---------------------------------------------------------*/
 	/*	if its still alive, SIGKILL it */
-	kill(process_to_kill, SIGKILL);
+	if (kill(process_to_kill, SIGKILL))
+	{
+		fprintf(stderr, "%s\n", strerror(errno));
+	}
 	
 	if (!IsProcessAliveIMP(process_to_kill))
 	{
@@ -310,6 +333,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	}
 	/*---------------------------------------------------------*/
 	
+	printf(WHITE "%60s%d was not successfully killed!\n", "", process_to_kill);
 	return (FAILURE);
 }
 /******************************************************************************/
@@ -321,6 +345,8 @@ int IsProcessAliveIMP(pid_t process_to_check)
 	
 	assert(process_to_check);
 	
+	printf(YELLOW "%60sChecking if %d is alive\n", "", process_to_check);
+	
 	/*	check if its already dead */
 	if (0 == kill(process_to_check, 0))
 	{
@@ -330,11 +356,9 @@ int IsProcessAliveIMP(pid_t process_to_check)
 	start_time = time(0);
 	end_time = start_time + time_to_wait;
 	
-	/*	verify its terminated	*/
+	/*	give it time to be terminated	*/
 	while (0 != kill(process_to_check, 0) && time(0) < end_time)
-	{
-		sleep(1);
-	}
+	{}
 	
 	/*	check if it still exists */
 	if (0 == kill(process_to_check, 0))
@@ -342,6 +366,7 @@ int IsProcessAliveIMP(pid_t process_to_check)
 		return (0);
 	}
 	
+	printf(WHITE "%60s%d is alive!\n", "", process_to_check);
 	return (1);
 }
 /******************************************************************************/

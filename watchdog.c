@@ -44,8 +44,7 @@ static pthread_t g_wd_thread = 0;
 void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 													size_t num_allowed_misses)
 {
-	info_ty wd_info = {0};
-	info_ty *info = &wd_info;
+	info_ty *wd_info = (info_ty *)malloc(sizeof(info_ty));
 	
 	char **argv_for_wd = NULL;
 	
@@ -79,10 +78,10 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 
 	/*	set info struct to be transfered to the scheduler function with all
 	 *	the needede information	*/
-	wd_info.argv_for_wd = argv_for_wd;
-	wd_info.num_allowed_misses = num_allowed_misses;
-	wd_info.signal_intervals = signal_intervals;
-	wd_info.i_am_wd = 0;
+	wd_info->argv_for_wd = argv_for_wd;
+	wd_info->num_allowed_misses = num_allowed_misses;
+	wd_info->signal_intervals = signal_intervals;
+	wd_info->i_am_wd = 0;
 	
 	/*	check if there is already a watch dog (by an env variable): */
 		/*	if yes - check its pid */
@@ -95,7 +94,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	else
 	{
 		printf(RED "\n[app %d] WD DOES NOT EXIST - CREATING WD . . .\n" NORMAL, getpid() );
-		ReturnIfError(FAILURE == StartWDProcess(info), 
+		ReturnIfError(FAILURE == StartWDProcess(wd_info), 
 									"[app] Failed to create WD process!\n", -1);
 	}
 	
@@ -107,8 +106,8 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	 *	to communicate with the Watch Dog process */
 	 /*	handle errors*/
 	ReturnIfError(pthread_create(&g_wd_thread, NULL, WDThreadSchedulerIMP,
-							info),"[app] Failed to create a WD thread\n", -1);
-										
+							wd_info),"[app] Failed to create a WD thread\n", -1);
+		
 	/*	return success */
 	return;
 }

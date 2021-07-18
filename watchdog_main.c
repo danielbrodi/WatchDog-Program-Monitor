@@ -35,8 +35,7 @@ int main(int argc, char *argv[])
 	size_t signal_intervals = 0;
 	size_t num_allowed_misses = 0;
 	
-	info_ty wd_info = {0};
-	info_ty *info = &wd_info;
+	info_ty *wd_info = (info_ty *)malloc(sizeof(info_ty));
 	
 	assert(argv);
 	
@@ -52,10 +51,10 @@ int main(int argc, char *argv[])
 	
 	/*	set info struct to be transfered to the scheduler function with all
 	 *	the needede information	*/
-	wd_info.argv_for_wd = argv + 1;
-	wd_info.num_allowed_misses = num_allowed_misses;
-	wd_info.signal_intervals = signal_intervals;
-	wd_info.i_am_wd = 1;
+	wd_info->argv_for_wd = argv + 1;
+	wd_info->num_allowed_misses = num_allowed_misses;
+	wd_info->signal_intervals = signal_intervals;
+	wd_info->i_am_wd = 1;
 	
 	SetProcessToSignalIMP(getppid());
 	
@@ -66,7 +65,9 @@ int main(int argc, char *argv[])
 	kill(getppid(), SIGUSR1);
 	
 	/* WDManageScheduler and start watching the app */
-	WDManageSchedulerIMP(info);
+	WDManageSchedulerIMP(wd_info);
+	
+	free(wd_info);
 	
 	/*	return */
 	return (0);
