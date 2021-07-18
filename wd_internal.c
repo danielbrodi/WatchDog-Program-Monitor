@@ -83,7 +83,7 @@ int TerminateProcessIMP(pid_t process_to_kill);
 /*	Sets a process to be signaled */
 void SetProcessToSignalIMP(pid_t pid);
 
-pid_t GetProcessToSignal();
+pid_t GetProcessToSignalIMP();
 
 /************************* Functions  Implementations *************************/
 
@@ -155,6 +155,8 @@ void *WDThreadSchedulerIMP(void *info)
 {
 	assert(info);
 	
+	WDManageSchedulerIMP(info);
+	
 	return (NULL);
 }
 /*----------------------------------------------------------------------------*/
@@ -181,7 +183,7 @@ int WDManageSchedulerIMP(info_ty *info)
 																	FAILURE);
 																	
 	/*	add a scheduler task that sends signals */
-	SchedulerAdd(wd_scheduler, OnIntervalSendSignalIMP, signal_intervals, NULL);
+	SchedulerAdd(wd_scheduler, OnIntervalSendSignalIMP, signal_intervals, info);
 	
 	/*	add a scheduler task that checks if there are signals from the process */
 	SchedulerAdd(wd_scheduler, OnIntervalCheckIfMissIMP, signal_intervals, info);
@@ -200,18 +202,23 @@ int WDManageSchedulerIMP(info_ty *info)
 	return (SUCCESS == ret_status ? SUCCESS : FAILURE);
 }
 /******************************************************************************/
-oper_ret_ty OnIntervalSendSignalIMP(void *unused)
+oper_ret_ty OnIntervalSendSignalIMP(void *info)
 {	
-	UNUSED(unused);
 	
 	/*	send SIGUSR1 to process_to_signal and handle errors if any */
 	if (kill(g_process_to_signal, SIGUSR1))
 	{
 		return (OPER_FAILURE);
 	}
-	
-	printf(GREEN "\nSignal Sent from %d to %d\n" NORMAL, getpid(), 
-														g_process_to_signal);
+	if (((info_ty *)info)->i_am_wd == 1)
+	{
+		printf(GREEN "\n[wd %d] ", getpid());
+	}
+	else
+	{
+		printf(GREEN "\n[app %d] ", getpid());
+	}
+	printf("Sending signal to %d\n" NORMAL, g_process_to_signal);
 	
 	/*	keep signaling */
 	return (NOT_DONE);
@@ -229,7 +236,7 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 	
 	/*	increment missed signals counter	*/
 	__sync_fetch_and_add(&g_counter_missed_signals, 1);
-
+	
 	/*	if num_missed_signals equals num_allowed_fails : */
 	if (num_allowed_misses == g_counter_missed_signals)
 	{
@@ -375,7 +382,7 @@ void SetProcessToSignalIMP(pid_t pid)
 	__sync_val_compare_and_swap(&g_process_to_signal, g_process_to_signal, pid);
 }
 /******************************************************************************/
-pid_t GetProcessToSignal()
+pid_t GetProcessToSignalIMP()
 {
 	return (g_process_to_signal);
 }

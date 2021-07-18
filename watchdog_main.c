@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
 	info_ty *info = &wd_info;
 	
 	assert(argv);
+	
 	UNUSED(argc);	
 		
 	/*	add itself to env variable to indicate there is a running watch dog */

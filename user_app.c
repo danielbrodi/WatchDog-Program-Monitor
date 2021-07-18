@@ -24,13 +24,8 @@ int main(int argc, char *argv[])
 	
 	KeepMeAlive(argc, argv, num_seconds_between_checks, num_allowed_fails);
 	
-	while (num < 10)
-	{
-		printf("Your lucky number is: %d\n", num);
-		sleep(1);
-		++num;
-	}
+	while (1)
+	{}
 
-	
 	return (0);
 }

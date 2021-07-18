@@ -45,6 +45,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 													size_t num_allowed_misses)
 {
 	info_ty wd_info = {0};
+	info_ty *info = &wd_info;
 	
 	char **argv_for_wd = NULL;
 	
@@ -52,8 +53,6 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	char env_num_allowed_misses[120] = {'\0'};
 	char env_signal_intervals[120] = {'\0'};
 		
-	info_ty *info = &wd_info;
-	
 	/*	asserts */
 	assert(signal_intervals);
 	assert(num_allowed_misses);
@@ -99,15 +98,15 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 		StartWDProcess(info);
 	}
 	
-	printf(CYAN "[app] WatchDog PID: %d\n" NORMAL, GetProcessToSignal());
-	ReturnIfError(GetProcessToSignal() <= 0, 
-								"[app] Failed to create watch dog process!\n", -1);
+	printf(CYAN "[app] WatchDog PID: %d\n" NORMAL, GetProcessToSignalIMP());
+	ReturnIfError(GetProcessToSignalIMP() <= 0, 
+							"[app] Failed to create watch dog process!\n", -1);
 	
 	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */
 	 /*	handle errors*/
 	ReturnIfError(pthread_create(&g_wd_thread, NULL, WDThreadSchedulerIMP,
-								info),"[app] Failed to create a WD thread\n", -1);
+							info),"[app] Failed to create a WD thread\n", -1);
 														
 	raise(SIGSTOP);
 										
@@ -122,7 +121,7 @@ int DNR(void)
 	handler_SetOnDNR(0);
 	
 	/* verify the watch dog is indeed terminated	*/
-	if (1 == IsProcessAliveIMP(GetProcessToSignal()))
+	if (1 == IsProcessAliveIMP(GetProcessToSignalIMP()))
 	{
 		fprintf(stderr, "[app] Failed to destroy the WD\n");
 		return (FAILURE);

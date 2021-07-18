@@ -63,6 +63,6 @@ int TerminateProcessIMP(pid_t process_to_kill);
 /*	Sets a process to be signaled */
 void SetProcessToSignalIMP(pid_t pid);
 
-pid_t GetProcessToSignal();
+pid_t GetProcessToSignalIMP();
 
 #endif	/* __WD_INTERNAL_H__	*/
