@@ -83,6 +83,7 @@ int TerminateProcessIMP(pid_t process_to_kill);
 /*	Sets a process to be signaled */
 void SetProcessToSignalIMP(pid_t pid);
 
+/*	Returns PID Of the process to be signaled */
 pid_t GetProcessToSignalIMP();
 
 /************************* Functions  Implementations *************************/
@@ -105,12 +106,12 @@ int StartWDProcess(info_ty *info)
 	 *	program. */
 	if (info->i_am_wd)
 	{
-		printf(CYAN "I AM WD -> Trying to Fork and run User_APP\n" NORMAL);	
+		printf(CYAN "%120s[wd %d] Trying to Fork and run User_APP\n" NORMAL, "", getpid());	
 		program_to_run = "./user_app";
 	}
 	else
 	{
-		printf(CYAN "I AM USER APP -> Trying to Fork and Run WD\n" NORMAL);
+		printf(CYAN "[app %d] Trying to Fork and Run WD\n" NORMAL, getpid());
 		program_to_run = "./watchdog";
 	}
 	
@@ -137,8 +138,7 @@ int StartWDProcess(info_ty *info)
 	/*---------------------------------*/
 	/*	if parent:	*/
 	else
-	{	
-		/*	set process to signal as child's pid */
+	{
 		SetProcessToSignalIMP(pid);
 		
 		return (SUCCESS);
@@ -210,13 +210,13 @@ oper_ret_ty OnIntervalSendSignalIMP(void *info)
 	{
 		return (OPER_FAILURE);
 	}
-	if (((info_ty *)info)->i_am_wd == 1)
+	if (((info_ty *)info)->i_am_wd)
 	{
-		printf(GREEN "\n[wd %d] ", getpid());
+		printf(GREEN "%120s wd %d ", "", getpid());
 	}
 	else
 	{
-		printf(GREEN "\n[app %d] ", getpid());
+		printf(GREEN "\n app %d ", getpid());
 	}
 	printf("Sending signal to %d\n" NORMAL, g_process_to_signal);
 	
@@ -236,6 +236,16 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 	
 	/*	increment missed signals counter	*/
 	__sync_fetch_and_add(&g_counter_missed_signals, 1);
+	
+	if (((info_ty *)info)->i_am_wd)
+	{
+		printf(RED "%120s[wd %d] ", "", getpid());
+	}
+	else
+	{
+		printf(RED "[app %d] ", getpid());
+	}
+	printf("[restart check] num of misses: %d\n" NORMAL, g_counter_missed_signals);
 	
 	/*	if num_missed_signals equals num_allowed_fails : */
 	if (num_allowed_misses == g_counter_missed_signals)
@@ -321,7 +331,7 @@ int IsProcessAliveIMP(pid_t process_to_check)
 	end_time = start_time + time_to_wait;
 	
 	/*	verify its terminated	*/
-	while (0 != kill(process_to_check, 0) && start_time < end_time)
+	while (0 != kill(process_to_check, 0) && time(0) < end_time)
 	{
 		sleep(1);
 	}
@@ -358,17 +368,16 @@ void SetSignalHandler(int signal, void(*handler_func)(int))
 void handler_ResetErrorsCounter(int sig_id)
 {
 	UNUSED(sig_id);
-	
+	printf(BLUE "%60s %d received signal after %d misses\n" NORMAL, "", getpid(), g_counter_missed_signals);
 	/*	reset counter of missed signals by XOR counter with itself */
 	__sync_fetch_and_xor(&g_counter_missed_signals, g_counter_missed_signals);
-	
 	return;
 }
 /******************************************************************************/
 void handler_SetOnDNR(int sig_id)
 {
 	UNUSED(sig_id);
-	
+	printf(YELLOW "DNR IS ON\n");
 	/*	set DNR flag as 1 */
 	__sync_fetch_and_add(&g_scheduler_should_stop, 1);
 	
@@ -379,11 +388,15 @@ void SetProcessToSignalIMP(pid_t pid)
 {
 	assert(pid);
 	
+	/*	set global variable of process to signal as a given pid */
 	__sync_val_compare_and_swap(&g_process_to_signal, g_process_to_signal, pid);
+	
+	return;
 }
 /******************************************************************************/
 pid_t GetProcessToSignalIMP()
 {
+	/*	returns PID Of the process to be signaled */
 	return (g_process_to_signal);
 }
 /******************************************************************************/

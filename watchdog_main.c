@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 	/*	add itself to env variable to indicate there is a running watch dog */
 	/*	handle errors	*/
 	putenv("WD_IS_ON=1");
-	printf(GREEN "[wd] WD STARTED RUNNING " NORMAL "\n");
+	printf(GREEN "%120s[wd %d] WD STARTED RUNNING\n", "", getpid());
 	
 	signal_intervals = atol(getenv("SIGNAL_INTERVAL"));
 	num_allowed_misses = atol(getenv("NUM_ALLOWED_FAILURES"));
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 	SetSignalHandler(SIGUSR1, handler_ResetErrorsCounter);
 	SetSignalHandler(SIGUSR2, handler_SetOnDNR);
 	
-	kill(getppid(), SIGCONT);
+	kill(getppid(), SIGUSR1);
 	
 	/* WDManageScheduler and start watching the app */
 	WDManageSchedulerIMP(info);

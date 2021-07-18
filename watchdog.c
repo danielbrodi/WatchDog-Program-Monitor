@@ -52,7 +52,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	/*	stores values of num_allowed_misses and signal_intervals as env vars */
 	char env_num_allowed_misses[120] = {'\0'};
 	char env_signal_intervals[120] = {'\0'};
-		
+	
 	/*	asserts */
 	assert(signal_intervals);
 	assert(num_allowed_misses);
@@ -89,26 +89,25 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 		/*	if no - create a new process and run WD and get its pid */
 	if (getenv("WD_IS_ON"))
 	{
-		printf(RED "[app] WD already exists, no need to create a new one!\n" NORMAL);
+		printf(RED "[app %d] WD already exists, no need to create a new one!\n" NORMAL, getpid());
 		SetProcessToSignalIMP(getppid());
 	}
 	else
 	{
-		printf(RED "\n[app] WD DOES NOT EXIST - CREATING WD . . .\n" NORMAL );
-		StartWDProcess(info);
+		printf(RED "\n[app %d] WD DOES NOT EXIST - CREATING WD . . .\n" NORMAL, getpid() );
+		ReturnIfError(FAILURE == StartWDProcess(info), 
+									"[app] Failed to create WD process!\n", -1);
 	}
 	
-	printf(CYAN "[app] WatchDog PID: %d\n" NORMAL, GetProcessToSignalIMP());
+	printf(YELLOW "[app %d] WatchDog PID: %d\n" NORMAL, getpid(), GetProcessToSignalIMP());
 	ReturnIfError(GetProcessToSignalIMP() <= 0, 
-							"[app] Failed to create watch dog process!\n", -1);
+					"[app] PID of new created WD process is invalid!\n", -1);
 	
 	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */
 	 /*	handle errors*/
 	ReturnIfError(pthread_create(&g_wd_thread, NULL, WDThreadSchedulerIMP,
 							info),"[app] Failed to create a WD thread\n", -1);
-														
-	raise(SIGSTOP);
 										
 	/*	return success */
 	return;
