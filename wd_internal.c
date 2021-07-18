@@ -78,6 +78,9 @@ int IsProcessAliveIMP(pid_t process_to_check);
  *	A failure to terminate the process returns 1	*/ 
 int TerminateProcessIMP(pid_t process_to_kill);
 
+/*	Sets a process to be signaled */
+void SetProcessToSignal(pid_t pid);
+
 /************************* Functions  Implementations *************************/
 
 /*	for improved readabillity	*/
@@ -358,5 +361,12 @@ void handler_siguser2(int sig_id)
 	__sync_fetch_and_add(&g_scheduler_should_stop, 1);
 	
 	return;
+}
+/******************************************************************************/
+void SetProcessToSignal(pid_t pid)
+{
+	assert(pid);
+	
+	g_process_to_signal = pid;
 }
 /******************************************************************************/

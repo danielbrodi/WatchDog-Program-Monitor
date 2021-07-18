@@ -35,17 +35,11 @@ int main(int argc, char *argv[])
 	
 	info_ty wd_info = {0};
 	info_ty *info = &wd_info;
-	char **argv_to_run = NULL;
 	
 	/*	add itself to env variable to indicate there is a running watch dog */
 	/*	handle errors	*/
 	putenv("WD_IS_ON=1");
 	printf(BLUE "[wd] WD IS RUNNING! " NORMAL "\n");
-	/* copy argv and attach wd_app_name to the beginning */
-	argv_to_run = (char **)(calloc(argc, sizeof(char *)));
-	ReturnIfError(NULL == argv_to_run, "[wd] Failed to create argv array\n", -1);
-	
-	memcpy(argv_to_run + 1, argv, argc - 1);
 	
 	signal_intervals = atol(getenv("SIGNAL_INTERVAL"));
 	num_allowed_misses = atol(getenv("NUM_ALLOWED_FAILURES"));
@@ -56,6 +50,8 @@ int main(int argc, char *argv[])
 	wd_info.num_allowed_misses = num_allowed_misses;
 	wd_info.signal_intervals = signal_intervals;
 	wd_info.i_am_wd = 1;
+	
+	SetProcessToSignal(getppid());
 	
 	/*	set signal handlers to deal SIGUSR1 &  SIGUSR2 */
 	SetSignalHandler(SIGUSR1, handler_siguser1);

@@ -69,15 +69,15 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 															num_allowed_misses);
 	putenv(env_num_allowed_misses);
 	
-	/* copy argv and attach wd_app_name to the beginning */
+	/*	allocate memory for new arguments to run with the Watch Dog program */
 	argv_for_wd = (char **)(calloc(argc + 2, sizeof(char *)));
 	ReturnIfError(NULL == argv_for_wd, "[app] Failed to create argv array\n", -1);
 	
+	/* copy argv and attach wd_app_name to the beginning */
 	argv_for_wd[0] = "./watchdog";
 	
-	memcpy(argv_for_wd + 1, argv, argc);
-	*(argv_for_wd + argc) = NULL;
-	
+	memcpy(argv_for_wd + 1, argv, argc * sizeof(char *));
+
 	/*	set info struct to be transfered to the scheduler function with all
 	 *	the needede information	*/
 	wd_info.argv_for_wd = argv_for_wd;
