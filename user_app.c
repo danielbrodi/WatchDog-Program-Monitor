@@ -20,9 +20,7 @@ int main(int argc, char *argv[])
 {
 /*	sigset_t signal_set;*/
 	
-	int num = 0;
-	
-	size_t num_allowed_fails = 3;
+	size_t num_allowed_fails = 5;
 	
 	size_t num_seconds_between_checks = 2;
 	
@@ -41,12 +39,6 @@ int main(int argc, char *argv[])
 	
 	while(1)
 	{
-		if (num > 5)
-		{
-			break;
-		}
-		++num;
-	
 		printf("\n%60s|Program[pid:%d] is running . . .|\n"
 				"%60s|Waiting for a signal . . .%9s|\n", "",getpid(), "", "");
 		sleep(1);
