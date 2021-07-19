@@ -63,7 +63,6 @@ int main(int argc, char *argv[])
 	SetSignalHandler(SIGUSR1, handler_ResetErrorsCounter);
 	SetSignalHandler(SIGUSR2, handler_SetOnDNR);
 	
-	kill(getppid(), SIGCONT);
 	
 	/* WDManageScheduler and start watching the app */
 	WDManageSchedulerIMP(wd_info);

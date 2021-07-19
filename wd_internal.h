@@ -53,9 +53,6 @@ void handler_ResetErrorsCounter(int sig_id);
 /*	Signal handler for SIGUSR2 - raises the DNR flag	*/
 void handler_SetOnDNR(int sig_id);
 
-/*	Checks if a process is alive and returns 1(alive) or 0(not alive).	*/
-int IsProcessAliveIMP(pid_t process_to_check);
-
 /*	Terminates a process and returns 0 if successfully terminated.
  *	A failure to terminate the process returns 1	*/ 
 int TerminateProcessIMP(pid_t process_to_kill);

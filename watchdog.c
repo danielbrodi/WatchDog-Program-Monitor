@@ -104,7 +104,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	ReturnIfError(GetProcessToSignalIMP() <= 0, 
 					"[app] PID of new created WD process is invalid!\n", -1);
 	
-	raise(SIGSTOP);
+	sleep(1);
 	
 	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */
@@ -122,12 +122,8 @@ int DNR(void)
 	/*	set DNR flag as 1 */
 	handler_SetOnDNR(0);
 	
-	/* verify the watch dog is indeed terminated	*/
-	if (1 == IsProcessAliveIMP(GetProcessToSignalIMP()))
-	{
-		fprintf(stderr, "[app] Failed to destroy the WD\n");
-		return (FAILURE);
-	}
+	/* verify the watch dog is terminated	*/
+	TerminateProcessIMP(GetProcessToSignalIMP());
 
 	if (pthread_join(g_wd_thread, NULL))
 	{

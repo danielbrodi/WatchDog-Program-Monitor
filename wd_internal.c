@@ -22,6 +22,7 @@
 #include <signal.h>		/*	signals functions				*/
 #include <unistd.h>     /*  fork, getppid, sleep            */
 #include <sys/types.h>	/*	pid_t							*/
+#include <sys/wait.h>	/*	pid_t							*/
 
 #include "utils.h"		/*	print colors, UNUSED, ExitIfError, ReturnIfError */
 #include "wd_internal.h"
@@ -73,9 +74,6 @@ void handler_ResetErrorsCounter(int sig_id);
 
 /*	Signal handler for SIGUSR2 - raises the DNR flag	*/
 void handler_SetOnDNR(int sig_id);
-
-/*	Checks if a process is alive and returns 1(alive) or 0(not alive).	*/
-int IsProcessAliveIMP(pid_t process_to_check);
 
 /*	Terminates a process and returns 0 if successfully terminated.
  *	A failure to terminate the process returns 1	*/ 
@@ -255,17 +253,21 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 	if (((info_ty *)info)->i_am_wd)
 	{
 		printf(RED "%120s[wd %d] ", "", getpid());
+		fflush(stdout);
 	}
 	else
 	{
 		printf(RED "[app %d] ", getpid());
+		fflush(stdout);
 	}
 	printf("[restart check] num of misses: %d\n" NORMAL, g_counter_missed_signals);
+	fflush(stdout);
 	
 	/*	if num_missed_signals equals num_allowed_fails : */
 	if (num_allowed_misses == g_counter_missed_signals)
 	{
 		printf(CYAN "%60s|-|Restarting process %d|-|\n" NORMAL, "", g_process_to_signal);
+		fflush(stdout);
 		/*	restart process_to_watch using its original argv parameters  */
 		if (FAILURE == TerminateProcessIMP(g_process_to_signal))
 		{
@@ -301,77 +303,58 @@ oper_ret_ty OnIntervalCheckIfDNR_IMP(void *scheduler_to_stop)
 }
 /******************************************************************************/
 int TerminateProcessIMP(pid_t process_to_kill)
-{    
+{   
+	int status = 0;
+	
 	assert(process_to_kill);
 	
 	printf(YELLOW "%60sTrying to kill %d\n:", "", process_to_kill);
+	fflush(stdout);
 	
-	/*---------------------------------------------------------*/
-	/*	check if process is already does not exist */
-	if (!IsProcessAliveIMP(process_to_kill))
-	{
-		return (SUCCESS);
-	}
 	/*---------------------------------------------------------*/
 	/*	terminate process_to_kill	*/
 	if (kill(process_to_kill, SIGTERM))
 	{
-		fprintf(stderr, "%s\n", strerror(errno));
+		waitpid(process_to_kill, &status, 0);
+		
+		if (!WIFEXITED(status))
+		{
+			fprintf(stderr, "Process exited abnormally!\n");
+			fflush(stdout);
+			
+		}
+			printf(WHITE "%d was successfully terminated!\n" NORMAL, 
+															process_to_kill);
+			
+			return(SUCCESS);
 	}
-	
-	if (!IsProcessAliveIMP(process_to_kill))
+	else
 	{
-		return (SUCCESS);
-	}
-	
-	/*---------------------------------------------------------*/
-	/*	if its still alive, SIGKILL it */
-	if (kill(process_to_kill, SIGKILL))
-	{
-		fprintf(stderr, "%s\n", strerror(errno));
-	}
-	
-	if (!IsProcessAliveIMP(process_to_kill))
-	{
-		return (SUCCESS);
+		waitpid(process_to_kill, &status, 0);
+		
+		if (!WIFEXITED(status))
+		{
+			fprintf(stderr, "Process exited abnormally!\n");
+		}
+		
+		if (-1 == kill(process_to_kill, SIGKILL))
+		{
+			if (ESRCH == errno)
+			{
+				printf(WHITE "%d was successfully terminated!\n" NORMAL, 
+															process_to_kill);
+				fflush(stdout);
+				
+				return (SUCCESS);
+			}
+		}
 	}
 	/*---------------------------------------------------------*/
 	
 	printf(WHITE "%60s%d was not successfully killed!\n", "", process_to_kill);
+	fflush(stdout);
+	
 	return (FAILURE);
-}
-/******************************************************************************/
-int IsProcessAliveIMP(pid_t process_to_check)
-{
-	time_t start_time = 0;
-	time_t end_time = 0;
-	time_t time_to_wait = 10; /* in seconds */
-	
-	assert(process_to_check);
-	
-	printf(YELLOW "%60sChecking if %d is alive\n", "", process_to_check);
-	
-	/*	check if its already dead */
-	if (0 == kill(process_to_check, 0))
-	{
-		return (0);
-	}
-	
-	start_time = time(0);
-	end_time = start_time + time_to_wait;
-	
-	/*	give it time to be terminated	*/
-	while (0 != kill(process_to_check, 0) && time(0) < end_time)
-	{}
-	
-	/*	check if it still exists */
-	if (0 == kill(process_to_check, 0))
-	{
-		return (0);
-	}
-	
-	printf(WHITE "%60s%d is still alive!\n", "", process_to_check);
-	return (1);
 }
 /******************************************************************************/
 void SetSignalHandler(int signal, void(*handler_func)(int))
