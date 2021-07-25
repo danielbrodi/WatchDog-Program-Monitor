@@ -24,6 +24,9 @@
 #include <stdlib.h>		/*	setenv, getenv	*/
 #include <string.h>		/*	memcpy		*/
 
+#include <semaphore.h>		/*	sem_open	*/
+#include <fcntl.h>			/*	O_CREAT	*/
+
 #include <pthread.h>	/*	pthread_create, pthread_t	*/
 #include <signal.h>		/*	signals functions */
 #include <unistd.h>
@@ -84,6 +87,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	wd_info->num_allowed_misses = num_allowed_misses;
 	wd_info->signal_intervals = signal_intervals;
 	wd_info->i_am_wd = 0;
+	wd_info->is_wd_ready = sem_open("WD_READY", O_CREAT, 0666, 0);
 	
 	/*	check if there is already a watch dog (by an env variable): */
 		/*	if yes - check its pid */

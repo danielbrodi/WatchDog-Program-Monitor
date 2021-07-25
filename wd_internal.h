@@ -18,6 +18,7 @@ typedef struct info
 	size_t num_allowed_misses;
 	size_t signal_intervals;	
 	int i_am_wd; /*	0 if the caller is the user app, 1 if its the WD program */
+	sem_t *is_wd_ready;
 }info_ty;
 
 /*	Creates a new process and runs through it the Watch Dog program or the

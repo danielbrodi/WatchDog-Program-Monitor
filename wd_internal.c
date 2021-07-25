@@ -19,6 +19,8 @@
 #include <time.h>		/*	time_t, time()					*/
 #include <string.h>
 
+#include <semaphore.h>	/*	sem_wait	*/
+
 #include <signal.h>		/*	signals functions				*/
 #include <unistd.h>     /*  fork, getppid, sleep            */
 #include <sys/types.h>	/*	pid_t							*/
@@ -139,6 +141,8 @@ int StartWDProcess(info_ty *info)
 	/*	if parent:	*/
 	else
 	{
+		sem_wait(info->is_wd_ready);
+		
 		/*	updates communicator process id as the child's pid */
 		SetProcessToSignalIMP(pid);
 		

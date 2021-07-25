@@ -18,6 +18,8 @@
 #include <stdlib.h>			/*	putenv, getenv	*/
 #include <string.h>			/*	atol			*/
 
+#include <semaphore.h>		/*	sem_open, sem_post	*/
+#include <fcntl.h>			/*	O_CREAT	*/
 
 #include <pthread.h>		/*	pthread_create, pthread_t	*/
 #include <signal.h>			/*	signals functions */
@@ -40,8 +42,12 @@ int main(int argc, char *argv[])
 																		,-1);
 	assert(argv);
 	
+	/*	set signal handlers to deal SIGUSR1 &  SIGUSR2 */
+	SetSignalHandler(SIGUSR1, handler_ResetErrorsCounter);
+	SetSignalHandler(SIGUSR2, handler_SetOnDNR);
+	
 	UNUSED(argc);	
-		
+	
 	/*	add itself to env variable to indicate there is a running watch dog */
 	/*	handle errors	*/
 	putenv("WD_IS_ON=1");
@@ -56,13 +62,11 @@ int main(int argc, char *argv[])
 	wd_info->num_allowed_misses = num_allowed_misses;
 	wd_info->signal_intervals = signal_intervals;
 	wd_info->i_am_wd = 1;
+	wd_info->is_wd_ready = sem_open("WD_READY", O_CREAT, 0666, 0);
 	
 	SetProcessToSignalIMP(getppid());
 	
-	/*	set signal handlers to deal SIGUSR1 &  SIGUSR2 */
-	SetSignalHandler(SIGUSR1, handler_ResetErrorsCounter);
-	SetSignalHandler(SIGUSR2, handler_SetOnDNR);
-	
+	sem_post(wd_info->is_wd_ready);
 	
 	/* WDManageScheduler and start watching the app */
 	WDManageSchedulerIMP(wd_info);
