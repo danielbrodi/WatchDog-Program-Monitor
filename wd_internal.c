@@ -141,7 +141,8 @@ int StartWDProcess(info_ty *info)
 	/*	if parent:	*/
 	else
 	{
-		sem_wait(info->is_wd_ready);
+		/*	wait until the created process will be ready to receive signals */
+		sem_wait(info->is_process_ready);
 		
 		/*	updates communicator process id as the child's pid */
 		SetProcessToSignalIMP(pid);
@@ -158,11 +159,26 @@ int StartWDProcess(info_ty *info)
 /*	manages WD scheduler - sends and checks for signals */
 void *WDThreadSchedulerIMP(void *info)
 {
+	sigset_t signal_set = {0};
+	
 	assert(info);
+	
+	sigemptyset(&signal_set);
+	sigaddset(&signal_set, SIGUSR1);
+	
+	/*	unblock SIGUSR1 to be able to receive signals from the Watch Dog */
+	pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
 	
 	WDManageSchedulerIMP(info);
 	
-	free(info);
+	/*	when scheduelr is done start cleaning up memory */
+	sem_unlink("PROCESS_IS_READY");
+	sem_close(((info_ty *)info)->is_process_ready);
+	
+	free(((info_ty *)info)->argv_for_wd);
+	memset(info, 0, sizeof(info_ty));
+	free((info_ty *)info);
+	info = NULL;
 	
 	return (NULL);
 }
@@ -257,21 +273,21 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 	if (((info_ty *)info)->i_am_wd)
 	{
 		printf(RED "%120s[wd %d] ", "", getpid());
-		fflush(stdout);
+		
 	}
 	else
 	{
 		printf(RED "[app %d] ", getpid());
-		fflush(stdout);
+		
 	}
 	printf("[restart check] num of misses: %d\n" NORMAL, g_counter_missed_signals);
-	fflush(stdout);
+	
 	
 	/*	if num_missed_signals equals num_allowed_fails : */
 	if (num_allowed_misses == g_counter_missed_signals)
 	{
 		printf(CYAN "%60s|-|Restarting process %d|-|\n" NORMAL, "", g_process_to_signal);
-		fflush(stdout);
+		
 		/*	restart process_to_watch using its original argv parameters  */
 		if (FAILURE == TerminateProcessIMP(g_process_to_signal))
 		{
@@ -313,7 +329,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	assert(process_to_kill);
 	
 	printf(YELLOW "%60sTrying to kill %d\n:", "", process_to_kill);
-	fflush(stdout);
+	
 	
 	/*---------------------------------------------------------*/
 	/*	terminate process_to_kill	*/
@@ -324,8 +340,6 @@ int TerminateProcessIMP(pid_t process_to_kill)
 		if (!WIFEXITED(status))
 		{
 			fprintf(stderr, "Process exited abnormally!\n");
-			fflush(stdout);
-			
 		}
 			printf(WHITE "%d was successfully terminated!\n" NORMAL, 
 															process_to_kill);
@@ -347,7 +361,6 @@ int TerminateProcessIMP(pid_t process_to_kill)
 			{
 				printf(WHITE "%d was successfully terminated!\n" NORMAL, 
 															process_to_kill);
-				fflush(stdout);
 				
 				return (SUCCESS);
 			}
@@ -356,7 +369,6 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	/*---------------------------------------------------------*/
 	
 	printf(WHITE "%60s%d was not successfully killed!\n", "", process_to_kill);
-	fflush(stdout);
 	
 	return (FAILURE);
 }

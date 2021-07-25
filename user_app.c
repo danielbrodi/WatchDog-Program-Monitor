@@ -18,20 +18,13 @@
 
 int main(int argc, char *argv[])
 {
-/*	sigset_t signal_set;*/
-	
 	size_t num_allowed_fails = 5;
 	
 	size_t num_seconds_between_checks = 2;
 	
 	time_t start_time = time(0);
-	time_t time_to_wait = 10;  /*	in seconds */
+	time_t time_to_wait = 120;  /*	in seconds */
 	time_t end_time = start_time + time_to_wait;
-	
-/*	sigemptyset(&signal_set);*/
-/*	sigaddset(&signal_set, SIGUSR1);*/
-/*	*/
-/*	sigprocmask(SIG_BLOCK, &signal_set, NULL);*/
 	
 	printf(GREEN "[app %d] USER APP STARTED RUNNING|\n", getpid());
 	
@@ -47,7 +40,7 @@ int main(int argc, char *argv[])
 	printf(WHITE "\n%60s|*USER APP IS DONE*: EXITING . . .|\n" NORMAL, "");
 	
 	/* dnr */
-	sigprocmask(SIG_UNBLOCK, &signal_set, NULL); 
+	DNR();
 
 	return (0);
 }

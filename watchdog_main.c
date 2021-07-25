@@ -10,7 +10,8 @@
 
 /******************************** Header Files ********************************/
 
-#define _XOPEN_SOURCE		/*	putenv	*/
+#define _POSIX_C_SOURCE 199506L	/*	setenv, getenv	*/
+#define _DEFAULT_SOURCE			/*	setenv, getenv	*/
 
 #include <assert.h>			/*	assert	*/	
 #include <stddef.h>			/*	size_t, NULL	*/
@@ -18,10 +19,9 @@
 #include <stdlib.h>			/*	putenv, getenv	*/
 #include <string.h>			/*	atol			*/
 
-#include <semaphore.h>		/*	sem_open, sem_post	*/
 #include <fcntl.h>			/*	O_CREAT	*/
-
 #include <pthread.h>		/*	pthread_create, pthread_t	*/
+#include <semaphore.h>		/*	sem_open, sem_post	*/
 #include <signal.h>			/*	signals functions */
 #include <sys/types.h>		/*	pid_t			*/
 #include <unistd.h>			/*	getppid			*/
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	
 	/*	add itself to env variable to indicate there is a running watch dog */
 	/*	handle errors	*/
-	putenv("WD_IS_ON=1");
+	setenv("WD_IS_ON", "1", 1);
 	printf(GREEN "%100s[wd %d] WD STARTED RUNNING\n", "", getpid());
 	
 	signal_intervals = atol(getenv("SIGNAL_INTERVAL"));
@@ -62,16 +62,20 @@ int main(int argc, char *argv[])
 	wd_info->num_allowed_misses = num_allowed_misses;
 	wd_info->signal_intervals = signal_intervals;
 	wd_info->i_am_wd = 1;
-	wd_info->is_wd_ready = sem_open("WD_READY", O_CREAT, 0666, 0);
+	wd_info->is_process_ready = sem_open("PROCESS_IS_READY", O_CREAT, 0666, 0);
 	
 	SetProcessToSignalIMP(getppid());
 	
-	sem_post(wd_info->is_wd_ready);
+	/*	set the process as ready and setted up to receive signals */
+	sem_post(wd_info->is_process_ready);
 	
 	/* WDManageScheduler and start watching the app */
 	WDManageSchedulerIMP(wd_info);
 	
+	/*	free struct's memory */
+	memset(wd_info, 0, sizeof(info_ty));
 	free(wd_info);
+	wd_info = NULL;
 	
 	/*	return */
 	return (0);
