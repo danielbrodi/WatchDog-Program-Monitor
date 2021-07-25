@@ -65,12 +65,11 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	SetSignalHandler(SIGUSR1, handler_ResetErrorsCounter);
 	
 	/*	set ENV variables of num_allowed_misses and signal_intervals */
-	sprintf(env_signal_intervals, "SIGNAL_INTERVAL=%ld", signal_intervals);
-	putenv(env_signal_intervals);
+	sprintf(env_signal_intervals, "%ld", signal_intervals);
+	setenv("SIGNAL_INTERVAL", env_signal_intervals, 1);
 	
-	sprintf(env_num_allowed_misses, "NUM_ALLOWED_FAILURES=%ld", 
-															num_allowed_misses);
-	putenv(env_num_allowed_misses);
+	sprintf(env_num_allowed_misses, "%ld", num_allowed_misses);
+	setenv("NUM_ALLOWED_MISSES", env_num_allowed_misses, 1);
 	
 	/*	allocate memory for new arguments to run with the Watch Dog program */
 	argv_for_wd = (char **)(calloc(argc + 2, sizeof(char *)));
@@ -108,7 +107,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	ReturnIfError(GetProcessToSignalIMP() <= 0, 
 					"[app] PID of new created WD process is invalid!\n", -1);
 	
-	sleep(1);
+	sem_post(wd_info->is_wd_ready);
 	
 	/*	create a thread that will use a scheduler
 	 *	to communicate with the Watch Dog process */

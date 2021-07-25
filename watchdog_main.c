@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 	printf(GREEN "%100s[wd %d] WD STARTED RUNNING\n", "", getpid());
 	
 	signal_intervals = atol(getenv("SIGNAL_INTERVAL"));
-	num_allowed_misses = atol(getenv("NUM_ALLOWED_FAILURES"));
+	num_allowed_misses = atol(getenv("NUM_ALLOWED_MISSES"));
 	
 	/*	set info struct to be transfered to the scheduler function with all
 	 *	the needede information	*/
