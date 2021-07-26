@@ -3,9 +3,9 @@
 * Author:				Daniel Brodsky				 		  												  								
 * Date:					11-July-2021
 * Pseudocode Reviewer:	Eran Barnoy
-* Code Reviewer:						   								
-* Version:				1.0		
-* Description:			Watchdog's program design pseudo-code. 
+* Code Reviewer:		Avital Moses					   								
+* Version:				1.5		
+* Description:			Watchdog's program creator.
 						Watchdog should protect a client's program from being
 						terminated and restart it if needed. 
 						The client's program should also protect the watchdog
@@ -15,8 +15,8 @@
 
 /******************************** Header Files ********************************/
 
-#define _POSIX_C_SOURCE 199506L	/*	sigaction	*/
-#define _DEFAULT_SOURCE			/*	setenv	*/
+#define _POSIX_C_SOURCE 199506L	/*	setenv, getenv	*/
+#define _DEFAULT_SOURCE			/*	setenv, getenv	*/
 
 #include <assert.h>		/*	assert	*/	
 #include <stddef.h>		/*	size_t, NULL	*/
@@ -24,14 +24,14 @@
 #include <stdlib.h>		/*	setenv, getenv	*/
 #include <string.h>		/*	memcpy		*/
 
-#include <fcntl.h>			/*	O_CREAT	*/
-#include <semaphore.h>		/*	sem_open	*/
+#include <fcntl.h>		/*	O_CREAT		*/
+#include <semaphore.h>	/*	sem_open	*/
 #include <pthread.h>	/*	pthread_create, pthread_t	*/
-#include <signal.h>		/*	signals functions */
+#include <signal.h>		/*	signals functions 	*/
 #include <unistd.h>
-#include <sys/types.h>	/*	pid_t			*/
+#include <sys/types.h>	/*	pid_t				*/
 
-#include "utils.h"		/*	ReturnIfError	*/
+#include "utils.h"		/*	ReturnIfError		*/
 #include "wd_internal.h"
 #include "watchdog.h"
 
@@ -53,7 +53,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 	char env_signal_intervals[120] = {'\0'};
 	
 	info_ty *wd_info = (info_ty *)malloc(sizeof(info_ty));
-	ExitIfError(NULL == wd_info, "Failed to allocate memory for info struct!\n"
+	ReturnIfError(NULL == wd_info, "Failed to allocate memory for info struct!\n"
 																		,-1);	
 	/*	asserts */
 	assert(signal_intervals);
@@ -93,19 +93,19 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 		/*	if no - create a new process and run WD and get its pid */
 	if (getenv("WD_IS_ON"))
 	{
-		printf(RED "[app %d] WD already exists, no need to create a new one!\n" 
+		DEBUG printf(RED "[app %d] WD already exists, no need to create a new one!\n" 
 															NORMAL, getpid());
 		SetProcessToSignalIMP(getppid());
 	}
 	else
 	{
-		printf(RED "\n[app %d] WD DOES NOT EXIST - CREATING WD . . .\n" NORMAL,
+		DEBUG printf(RED "\n[app %d] WD DOES NOT EXIST - CREATING WD . . .\n" NORMAL,
 																	getpid() );
 		ReturnIfError(FAILURE == StartWDProcess(wd_info), 
 									"[app] Failed to create WD process!\n", -1);
 	}
 	
-	printf(YELLOW "[app %d] WatchDog PID: %d\n" NORMAL, getpid(), 
+	DEBUG printf(YELLOW "[app %d] WatchDog PID: %d\n" NORMAL, getpid(), 
 													GetProcessToSignalIMP());
 	ReturnIfError(GetProcessToSignalIMP() <= 0, 
 					"[app] PID of new created WD process is invalid!\n", -1);
@@ -130,7 +130,7 @@ void KeepMeAlive(int argc, char *argv[], size_t signal_intervals,
 int DNR(void)
 {
 	/*	set DNR flag as 1 */
-	printf(YELLOW "\n\n%60sSENDING SIGUSR2 DNR\n\n" NORMAL, "");
+	DEBUG printf(YELLOW "\n\n%60sSENDING DNR . . . \n\n" NORMAL, "");
 	kill(GetProcessToSignalIMP(), SIGUSR2);
 	
 	handler_SetOnDNR(0);

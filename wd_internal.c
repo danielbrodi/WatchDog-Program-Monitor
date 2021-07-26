@@ -3,8 +3,8 @@
 * Author:				Daniel Brodsky				 		  												  								
 * Date:					12-July-2021
 * Pseudocode Reviewer:	Eran Barnoy
-* Code Reviewer:						   								
-* Version:				1.0		
+* Code Reviewer:		Avital Moses			   								
+* Version:				1.5		
 * Description:			Watchdog's program internal functions.
 \***********************************s*******************************************/
 
@@ -28,7 +28,7 @@
 
 #include "utils.h"		/*	print colors, UNUSED, ExitIfError, ReturnIfError */
 #include "wd_internal.h"
-#include "scheduler.h"	/*	scheduler's API functions */
+#include "scheduler.h"	/*	scheduler's API functions 		*/
 
 /***************************** Global Definitions *****************************/
 
@@ -107,13 +107,13 @@ int StartWDProcess(info_ty *info)
 	 *	program. */
 	if (info->i_am_wd)
 	{
-		printf(CYAN "%120s[wd %d] Trying to Fork and run User_APP\n" NORMAL, "", 
+		DEBUG printf(CYAN "%120s[wd %d] Trying to Fork and run User_APP\n" NORMAL, "", 
 																	getpid());	
-		program_to_run = "./user_app";
+		program_to_run = info->argv_for_wd[0];
 	}
 	else
 	{
-		printf(CYAN "[app %d] Trying to Fork and Run WD\n" NORMAL, getpid());
+		DEBUG printf(CYAN "[app %d] Trying to Fork and Run WD\n" NORMAL, getpid());
 		program_to_run = "./watchdog";
 	}
 	
@@ -188,17 +188,14 @@ int WDManageSchedulerIMP(info_ty *info)
 	int ret_status = 0;
 	
 	size_t signal_intervals = 0;
-	size_t num_allowed_misses = 0;
 	
 	scheduler_ty *wd_scheduler = NULL;
 	
 	assert(info);
 	
 	signal_intervals = info->signal_intervals;
-	num_allowed_misses = info->num_allowed_misses;
 	
 	assert(signal_intervals);
-	assert(num_allowed_misses);
 	
 	/*	create scheduler	*/
 	wd_scheduler = SchedulerCreate();
@@ -245,13 +242,13 @@ oper_ret_ty OnIntervalSendSignalIMP(void *info)
 	{
 		if (((info_ty *)info)->i_am_wd)
 		{
-			printf(GREEN "%120sWatchDog[pid:%d] ", "", getpid());
+			DEBUG printf(GREEN "%120sWatchDog[pid:%d] ", "", getpid());
 		}
 		else
 		{
-			printf(GREEN "\nUserApp[pid:%d] ", getpid());
+			DEBUG printf(GREEN "\nUserApp[pid:%d] ", getpid());
 		}
-		printf("Sending signal to [pid:%d]\n" NORMAL, g_process_to_signal);	
+		DEBUG printf("Sending signal to [pid:%d]\n" NORMAL, g_process_to_signal);	
 	}	
 	/*	keep signaling */
 	return (NOT_DONE);
@@ -272,21 +269,22 @@ oper_ret_ty OnIntervalCheckIfMissIMP(void *info)
 	
 	if (((info_ty *)info)->i_am_wd)
 	{
-		printf(RED "%120s[wd %d] ", "", getpid());
+		DEBUG printf(RED "%120s[wd %d] ", "", getpid());
 		
 	}
 	else
 	{
-		printf(RED "[app %d] ", getpid());
+		DEBUG printf(RED "[app %d] ", getpid());
 		
 	}
-	printf("[restart check] num of misses: %d\n" NORMAL, g_counter_missed_signals);
-	
+	DEBUG printf("[restart check] num of misses: %d\n" NORMAL, 
+													g_counter_missed_signals);
 	
 	/*	if num_missed_signals equals num_allowed_fails : */
 	if (num_allowed_misses == g_counter_missed_signals)
 	{
-		printf(CYAN "%60s|-|Restarting process %d|-|\n" NORMAL, "", g_process_to_signal);
+		DEBUG printf(CYAN "%60s|-|Restarting process %d|-|\n" NORMAL, "", 
+														g_process_to_signal);
 		
 		/*	restart process_to_watch using its original argv parameters  */
 		if (FAILURE == TerminateProcessIMP(g_process_to_signal))
@@ -328,8 +326,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	
 	assert(process_to_kill);
 	
-	printf(YELLOW "%60sTrying to kill %d\n:", "", process_to_kill);
-	
+	DEBUG printf(YELLOW "%60sTrying to kill %d\n:", "", process_to_kill);
 	
 	/*---------------------------------------------------------*/
 	/*	terminate process_to_kill	*/
@@ -341,7 +338,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 		{
 			fprintf(stderr, "Process exited abnormally!\n");
 		}
-			printf(WHITE "%d was successfully terminated!\n" NORMAL, 
+			DEBUG printf(WHITE "%d was successfully terminated!\n" NORMAL, 
 															process_to_kill);
 			
 			return(SUCCESS);
@@ -359,7 +356,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 		{
 			if (ESRCH == errno)
 			{
-				printf(WHITE "%d was successfully terminated!\n" NORMAL, 
+				DEBUG printf(WHITE "%d was successfully terminated!\n" NORMAL, 
 															process_to_kill);
 				
 				return (SUCCESS);
@@ -368,7 +365,7 @@ int TerminateProcessIMP(pid_t process_to_kill)
 	}
 	/*---------------------------------------------------------*/
 	
-	printf(WHITE "%60s%d was not successfully killed!\n", "", process_to_kill);
+	DEBUG printf(WHITE "%60s%d was not successfully killed!\n", "", process_to_kill);
 	
 	return (FAILURE);
 }
@@ -397,7 +394,7 @@ void handler_ResetErrorsCounter(int sig_id)
 {
 	UNUSED(sig_id);
 	
-	printf(BLUE "%60s|[pid:%d] received SIGUSR1 signal|\n" NORMAL, "", getpid());
+	DEBUG printf(BLUE "%60s|[pid:%d] received SIGUSR1 signal|\n" NORMAL, "", getpid());
 	
 	/*	reset counter of missed signals by XOR counter with itself */
 	__sync_fetch_and_xor(&g_counter_missed_signals, g_counter_missed_signals);

@@ -3,8 +3,8 @@
 * Author:				Daniel Brodsky				 		  												  								
 * Date:					12-July-2021
 * Pseudocode Reviewer:	Eran Barnoy
-* Code Reviewer:						   								
-* Version:				1.0		
+* Code Reviewer:		Avital Moses   								
+* Version:				1.5		
 * Description:			Main function of the Watch Dog program.
 \******************************************************************************/
 
@@ -46,12 +46,12 @@ int main(int argc, char *argv[])
 	SetSignalHandler(SIGUSR1, handler_ResetErrorsCounter);
 	SetSignalHandler(SIGUSR2, handler_SetOnDNR);
 	
-	UNUSED(argc);	
+	UNUSED(argc);
 	
 	/*	add itself to env variable to indicate there is a running watch dog */
 	/*	handle errors	*/
 	setenv("WD_IS_ON", "1", 1);
-	printf(GREEN "%100s[wd %d] WD STARTED RUNNING\n", "", getpid());
+	DEBUG printf(GREEN "%100s[wd %d] WD STARTED RUNNING\n", "", getpid());
 	
 	signal_intervals = atol(getenv("SIGNAL_INTERVAL"));
 	num_allowed_misses = atol(getenv("NUM_ALLOWED_MISSES"));

@@ -3,7 +3,7 @@
 * Author:				Daniel Brodsky				 		  												  								
 * Date:					12-July-2021
 * Pseudocode Reviewer:	Eran Barnoy
-* Code Reviewer:						   								
+* Code Reviewer:		Avital Moses						   								
 * Version:				1.0			
 * Description:			Sample of a user app that runs a Watch Dog program.
 \******************************************************************************/
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	size_t num_seconds_between_checks = 2;
 	
 	time_t start_time = time(0);
-	time_t time_to_wait = 120;  /*	in seconds */
+	time_t time_to_wait = 10;  /*	in seconds */
 	time_t end_time = start_time + time_to_wait;
 	
 	printf(GREEN "[app %d] USER APP STARTED RUNNING|\n", getpid());
