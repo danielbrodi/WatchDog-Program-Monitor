@@ -3,7 +3,8 @@
 * Author:			Daniel Brodsky					  								
 * Date:				14-July-2021
 * Version:			1.0					   												   								
-* Description:		Watchdog's program internal functions API.		 
+* Description:		Watchdog's program internal functions API.
+					--Not available or visible to the client--	 
 \******************************************************************************/
 
 #ifndef __WD_INTERNAL_H__
