@@ -45,3 +45,12 @@ A [Makefile](./makefile) is available and can completely compile the needed reso
 * User's program code which needs to include a call to **KeepMeAlive(...)** and **DNR()** in order call and to stop the watchdog.
 
 ### Only limition is to keep `watchdog.o` file in the same directory with the user's executable file.
+
+# Screenshots
+- The left column indicates the behaviour of the user's app additional thread which communicates with the watchdog process.
+- The middle column indicates the behaviour of the user's app main thread runs the code of the program of the user.
+- The right column indicates the behaviour of the watchdog process which was created to guard and watch the user's app and communicates with it.
+![invoking and calling watchdog](./screenshots/start.png)
+![calling off the watchdog](./screenshots/end.png)
+
+At the end of the critical section of the user's code, a request of `DNR()` is being send. Thus, the watchdog terminates itself and the thread which communicates from the user process, and then the user's app can die peacefully and be terminated without being recovered by the watchdog.
