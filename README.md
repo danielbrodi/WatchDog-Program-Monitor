@@ -2,6 +2,8 @@
 A multi-threaded program which monitors another program to see if its out of control or have stopped operation, and resets it if needed.   
 Written in C and includes synchronization and concurrency tools, signals and a [custom module of a callbacks scheduler](./scheduler/) which handles the communication between the processes.
 
+![diagram of the watchdog program by Daniel Brodsky](./screenshots/diagram.png)
+
 # How to invoke and to destroy the Watchdog
 By the [API](./watchdog.h), in order to create the watchdog and make it watch and guard client's application, the client needs to put the critical section,
 the code that he wants to protect, between `KeepMeAlive()` and `DNR()` calls.
